@@ -7,13 +7,10 @@ import (
 	"net/http"
 )
 
-var MyStorage *repository.Storage
-
 func Run(addr string) {
-	MyStorage = repository.NewStorage()
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", hd.UrlReduction)
-	mux.HandleFunc("/{id}", hd.GetFullUrl)
-	server := &http.Server{Addr: addr, Handler: mux}
+	handler := hd.ServiceHandler{
+		Repository: repository.NewStorage(),
+	}
+	server := &http.Server{Addr: addr, Handler: handler}
 	log.Fatal(server.ListenAndServe())
 }
