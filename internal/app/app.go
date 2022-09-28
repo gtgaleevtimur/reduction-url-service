@@ -2,15 +2,15 @@ package app
 
 import (
 	hd "github.com/gtgaleevtimur/reduction-url-service/internal/handlers"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 	"log"
 	"net/http"
 )
 
 func Run(addr string) {
-	handler := hd.ServiceHandler{
-		Repository: repository.NewStorage(),
-	}
-	server := &http.Server{Addr: addr, Handler: handler}
+	mux := http.NewServeMux()
+	store := hd.NewServerStore()
+	mux.HandleFunc("/", store.ReductionURL)
+	mux.HandleFunc("/{id}", store.GetFullUrl)
+	server := &http.Server{Addr: addr, Handler: mux}
 	log.Fatal(server.ListenAndServe())
 }

@@ -6,7 +6,7 @@ type Storage struct {
 	FullUrlKeyStorage map[string]string
 }
 
-func NewStorage() *Storage {
+func New() *Storage {
 	return &Storage{
 		CountID:           0,
 		IDKeyUrlStorage:   make(map[string]string),
