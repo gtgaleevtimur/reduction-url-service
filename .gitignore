@@ -17,7 +17,7 @@ cmd/shortener/shortener
 
 # Dependency directories (remove the comment below to include it)
 vendor/
-testApi
+testApi/test.http
 
 # IDEs directories
 .idea
