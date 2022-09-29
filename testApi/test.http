@@ -39,7 +39,7 @@ http://localhost:8080/thirdurlposting
 
 
 GET  http://localhost:8080/10 HTTP/1.1
-
+content-type: text/plain
 
 # 200 (OK)
 # 404 (Not Found)
