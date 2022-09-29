@@ -1,0 +1,55 @@
+POST http://localhost:8080/ HTTP/1.1
+content-type: text/plain
+
+http://localhost:8080/firsturlposting
+
+# 201 (Created) 0
+# 404 (Not Found)
+
+###
+
+POST http://localhost:8080/ HTTP/1.1
+content-type: text/plain
+
+http://localhost:8080/secondurlposting
+
+# 201 (Created) 1
+# 404 (Not Found)
+
+###
+
+POST http://localhost:8080/ HTTP/1.1
+content-type: text/plain
+
+http://localhost:8080/thirdurlposting
+
+# 201 (Created) 2
+# 404 (Not Found)
+
+###
+POST http://localhost:8080/ HTTP/1.1
+content-type: text/plain
+
+http://localhost:8080/thirdurlposting
+
+# 201 (Created) 2
+# 404 (Not Found)
+
+###
+
+
+GET  http://localhost:8080/10 HTTP/1.1
+
+
+# 200 (OK)
+# 404 (Not Found)
+
+###
+
+
+POST  http://localhost:8080/2 HTTP/1.1
+content-type: text/plain
+
+
+# 200 (OK)
+# 404 (Not Found)

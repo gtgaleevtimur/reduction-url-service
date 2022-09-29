@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type ServerStore struct {
@@ -15,12 +16,22 @@ func NewServerStore() *ServerStore {
 	return &ServerStore{Store: repository.New()}
 }
 
+func (h ServerStore) Root(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	if len(path) == 1 {
+		h.ReductionURL(w, r)
+	} else {
+		h.GetFullUrl(w, r)
+	}
+}
+
 func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Need POST requests!", http.StatusMethodNotAllowed)
 		return
 	}
 	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, "Error via reading request body", http.StatusInternalServerError)
 		return
@@ -31,8 +42,10 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 		h.Store.FullUrlKeyStorage[inputURL] = strconv.Itoa(h.Store.CountID)
 		h.Store.IDKeyUrlStorage[strconv.Itoa(h.Store.CountID)] = inputURL
 		h.Store.CountID++
+		result = []byte(h.Store.FullUrlKeyStorage[inputURL])
+	} else {
+		result = []byte(h.Store.FullUrlKeyStorage[inputURL])
 	}
-	result = []byte(h.Store.FullUrlKeyStorage[inputURL])
 	w.Header().Set("Content-Type", "text/plain ; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
@@ -40,10 +53,10 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 
 func (h ServerStore) GetFullUrl(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Need POST requests!", http.StatusMethodNotAllowed)
+		http.Error(w, "Need Get requests!", http.StatusMethodNotAllowed)
 		return
 	}
-	id := r.URL.Path
+	id := strings.Trim(r.URL.Path, "/")
 	if val, ok := h.Store.IDKeyUrlStorage[id]; !ok {
 		http.Error(w, "Dont have URL id in DB", http.StatusBadRequest)
 		return
