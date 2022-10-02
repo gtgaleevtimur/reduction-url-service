@@ -43,12 +43,12 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 	}
 	inputURL := string(body)
 	var result []byte
-	shortURl, err := h.Store.Insert(inputURL)
+	shortURL, err := h.Store.Insert(inputURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	result = []byte(shortURl)
+	result = []byte(shortURL)
 	w.Header().Set("Content-Type", "text/plain ; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
