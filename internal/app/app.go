@@ -7,9 +7,7 @@ import (
 )
 
 func Run(addr string) {
-	mux := http.NewServeMux()
-	store := hd.NewServerStore()
-	mux.HandleFunc("/", store.Root)
-	server := &http.Server{Addr: addr, Handler: mux}
+	storage := hd.NewServerStore()
+	server := &http.Server{Addr: addr, Handler: hd.NewRouter(storage)}
 	log.Fatal(server.ListenAndServe())
 }

@@ -64,7 +64,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "Negative test with anoteh method",
+			name:    "Negative test with another method",
 			request: "/0",
 			arg:     "http://test.test/test1",
 			method:  http.MethodPost,
@@ -76,24 +76,31 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.method, tt.request, nil)
-			w := httptest.NewRecorder()
-			s := NewServerStore()
-			if !tt.wantErr {
-				s.Store.Insert(tt.arg)
-			}
-			h := http.HandlerFunc(s.GetFullURL)
-			h.ServeHTTP(w, request)
-			result := w.Result()
+			controller := NewServerStore()
+			r := NewRouter(controller)
+			_, err := controller.Store.Insert(tt.arg)
+			require.NoError(t, err)
+			ts := httptest.NewServer(r)
+			defer ts.Close()
 
-			defer result.Body.Close()
+			req, err := http.NewRequest(tt.method, ts.URL+tt.request, nil)
+			require.NoError(t, err)
+
+			client := &http.Client{
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				}}
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
 
 			if !tt.wantErr {
-				assert.Equal(t, tt.want.statusCode, result.StatusCode)
-				assert.Equal(t, tt.want.location, result.Header.Get("Location"))
+				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+				assert.Equal(t, tt.want.location, resp.Header.Get("Location"))
 			}
 			if tt.wantErr {
-				assert.Equal(t, tt.want.statusCode, result.StatusCode)
+				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			}
 		})
 	}
@@ -141,28 +148,31 @@ func TestServerStore_ReductionURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.method, tt.request, bytes.NewBuffer([]byte(tt.reqBody)))
-			w := httptest.NewRecorder()
-			s := NewServerStore()
-			h := http.HandlerFunc(s.ReductionURL)
-			h.ServeHTTP(w, request)
-			result := w.Result()
+			controller := NewServerStore()
+			r := NewRouter(controller)
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+			req, err := http.NewRequest(tt.method, ts.URL+tt.request, bytes.NewBuffer([]byte(tt.reqBody)))
+			require.NoError(t, err)
 
-			defer result.Body.Close()
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+
+			defer resp.Body.Close()
 
 			if !tt.wantErr {
-				assert.Equal(t, tt.want.statusCode, result.StatusCode)
-				assert.Equal(t, tt.want.respType, result.Header.Get("Content-Type"))
+				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+				assert.Equal(t, tt.want.respType, resp.Header.Get("Content-Type"))
 
-				body, err := ioutil.ReadAll(result.Body)
+				body, err := ioutil.ReadAll(resp.Body)
 				require.NoError(t, err)
-				err = result.Body.Close()
+				err = resp.Body.Close()
 				require.NoError(t, err)
 
 				assert.Equal(t, tt.want.shortURL, string(body))
 			}
 			if tt.wantErr {
-				assert.Equal(t, tt.want.statusCode, result.StatusCode)
+				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			}
 		})
 	}
