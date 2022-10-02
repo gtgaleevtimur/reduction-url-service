@@ -9,7 +9,7 @@ import (
 
 type MyHandlers interface {
 	ReductionURL(w http.ResponseWriter, r *http.Request)
-	GetFullUrl(w http.ResponseWriter, r *http.Request)
+	GetFullURL(w http.ResponseWriter, r *http.Request)
 	Root(w http.ResponseWriter, r *http.Request)
 }
 
@@ -26,7 +26,7 @@ func (h ServerStore) Root(w http.ResponseWriter, r *http.Request) {
 	if len(path) == 1 {
 		h.ReductionURL(w, r)
 	} else {
-		h.GetFullUrl(w, r)
+		h.GetFullURL(w, r)
 	}
 }
 
@@ -54,7 +54,7 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func (h ServerStore) GetFullUrl(w http.ResponseWriter, r *http.Request) {
+func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Need Get requests!", http.StatusMethodNotAllowed)
 		return

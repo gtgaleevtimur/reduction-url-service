@@ -82,9 +82,11 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			if !tt.wantErr {
 				s.Store.Insert(tt.arg)
 			}
-			h := http.HandlerFunc(s.GetFullUrl)
+			h := http.HandlerFunc(s.GetFullURL)
 			h.ServeHTTP(w, request)
 			result := w.Result()
+
+			defer result.Body.Close()
 
 			if !tt.wantErr {
 				assert.Equal(t, tt.want.statusCode, result.StatusCode)
@@ -100,7 +102,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 func TestServerStore_ReductionURL(t *testing.T) {
 	type want struct {
 		statusCode int
-		shortUrl   string
+		shortURL   string
 		respType   string
 	}
 
@@ -119,7 +121,7 @@ func TestServerStore_ReductionURL(t *testing.T) {
 			reqBody: "https://www.test.net/test",
 			want: want{
 				respType:   "text/plain ; charset=utf-8",
-				shortUrl:   "0",
+				shortURL:   "0",
 				statusCode: 201,
 			},
 			wantErr: false,
@@ -131,7 +133,7 @@ func TestServerStore_ReductionURL(t *testing.T) {
 			reqBody: "https://www.test.net/test",
 			want: want{
 				respType:   "text/plain ; charset=utf-8",
-				shortUrl:   "0",
+				shortURL:   "0",
 				statusCode: 405,
 			},
 			wantErr: true,
@@ -146,6 +148,8 @@ func TestServerStore_ReductionURL(t *testing.T) {
 			h.ServeHTTP(w, request)
 			result := w.Result()
 
+			defer result.Body.Close()
+
 			if !tt.wantErr {
 				assert.Equal(t, tt.want.statusCode, result.StatusCode)
 				assert.Equal(t, tt.want.respType, result.Header.Get("Content-Type"))
@@ -155,7 +159,7 @@ func TestServerStore_ReductionURL(t *testing.T) {
 				err = result.Body.Close()
 				require.NoError(t, err)
 
-				assert.Equal(t, tt.want.shortUrl, string(body))
+				assert.Equal(t, tt.want.shortURL, string(body))
 			}
 			if tt.wantErr {
 				assert.Equal(t, tt.want.statusCode, result.StatusCode)

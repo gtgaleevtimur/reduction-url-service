@@ -16,8 +16,8 @@ func TestNew(t *testing.T) {
 			name: "Positive test",
 			want: &Storage{
 				CountID:           0,
-				IDKeyUrlStorage:   make(map[string]string),
-				FullUrlKeyStorage: make(map[string]string),
+				IDKeyURLStorage:   make(map[string]string),
+				FullURLKeyStorage: make(map[string]string),
 			},
 			wantErr: false,
 		}, {
