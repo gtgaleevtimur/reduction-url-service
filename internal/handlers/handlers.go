@@ -53,6 +53,7 @@ func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := strings.Trim(r.URL.Path, "/")
+	id = id[len(id)-1:]
 	longURL, err := h.Store.GetFullURL(id)
 	fullURL := longURL.Full
 	if err != nil {
