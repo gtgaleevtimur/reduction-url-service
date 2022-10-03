@@ -4,7 +4,6 @@ import (
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -38,14 +37,12 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 	}
 	inputURL := string(body)
 	var result []byte
-	if _, ok := h.Store.FullUrlKeyStorage[inputURL]; !ok {
-		h.Store.FullUrlKeyStorage[inputURL] = strconv.Itoa(h.Store.CountID)
-		h.Store.IDKeyUrlStorage[strconv.Itoa(h.Store.CountID)] = inputURL
-		h.Store.CountID++
-		result = []byte(h.Store.FullUrlKeyStorage[inputURL])
-	} else {
-		result = []byte(h.Store.FullUrlKeyStorage[inputURL])
+	shortURL, err := h.Store.Insert(inputURL)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	result = []byte(shortURL)
 	w.Header().Set("Content-Type", "text/plain ; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
@@ -57,11 +54,11 @@ func (h ServerStore) GetFullUrl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := strings.Trim(r.URL.Path, "/")
-	if val, ok := h.Store.IDKeyUrlStorage[id]; !ok {
-		http.Error(w, "Dont have URL id in DB", http.StatusBadRequest)
+	longURL, err := h.Store.Get(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
-	} else {
-		w.Header().Set("Location", val)
-		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
+	w.Header().Set("Location", longURL)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
