@@ -14,9 +14,11 @@ type URL struct {
 type FullURL struct {
 	Full string
 }
+
 type ShortURL struct {
 	Short string
 }
+
 type Storage struct {
 	Counter int
 	Data    map[int]URL

@@ -36,13 +36,12 @@ func (h ServerStore) CreateShortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	inputURL := string(body)
-	var result []byte
 	shortURL, err := h.Store.InsertURL(inputURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	result = []byte(shortURL)
+	result := []byte(shortURL)
 	w.Header().Set("Content-Type", "text/plain ; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
@@ -55,10 +54,14 @@ func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
 	}
 	id := strings.Trim(r.URL.Path, "/")
 	longURL, err := h.Store.GetFullURL(id)
+	fullURL := longURL.Full
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	w.Header().Set("Location", longURL.Full)
+	if !strings.HasPrefix(fullURL, "http://") {
+		fullURL = "http://" + strings.TrimPrefix(fullURL, "//")
+	}
+	w.Header().Set("Location", fullURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
