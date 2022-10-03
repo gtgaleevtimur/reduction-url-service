@@ -1,85 +1,62 @@
 package handlers
 
 import (
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/gin-gonic/gin"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
-	"io"
+	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
-func NewRouter(controller *ServerStore) chi.Router {
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-
-	r.Post("/", controller.ReductionURL)
-	r.Get("/{id}", controller.GetFullURL)
-
+func NewRouter(controller *ServerStorage) *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
+	r.POST("/", controller.CreateShortURL)
+	r.GET("/:id", controller.GetFullURL)
+	r.NoRoute(controller.ResponseBadRequest)
 	return r
 }
 
-type ServerStore struct {
-	Store *repository.Storage
+type ServerStorage struct {
+	Storage *repository.Storage
 }
 
-func NewServerStore() *ServerStore {
-	return &ServerStore{Store: repository.New()}
+func NewServerStorage() *ServerStorage {
+	return &ServerStorage{Storage: repository.NewStorage()}
 }
 
-func (h ServerStore) Root(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	if len(path) == 1 {
-		h.ReductionURL(w, r)
-	} else {
-		h.GetFullURL(w, r)
-	}
-}
-
-func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		buildErrResponse(w, http.StatusMethodNotAllowed, []byte("Need POST requests!"))
-		return
-	}
-	body, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
+func (h ServerStorage) CreateShortURL(c *gin.Context) {
+	fullURL, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		buildErrResponse(w, http.StatusInternalServerError, []byte("Error via reading request body"))
+		c.String(http.StatusInternalServerError, "")
 		return
 	}
-	inputURL := string(body)
-	var result []byte
-	shortURL, err := h.Store.Insert(inputURL)
+	shortURL, err := h.Storage.InsertURL(c, string(fullURL))
 	if err != nil {
-		buildErrResponse(w, http.StatusInternalServerError, []byte(err.Error()))
+		c.String(http.StatusInternalServerError, "")
 		return
 	}
-	result = []byte(shortURL)
-	w.Header().Set("Content-Type", "text/plain ; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(result)
+	exShortURL := config.ExpShortURL(shortURL)
+	c.Writer.Header().Set("Content-Type", "text/plain")
+	c.String(http.StatusCreated, exShortURL)
 }
 
-func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		buildErrResponse(w, http.StatusMethodNotAllowed, []byte("Need Get requests!"))
-		return
-	}
-	//id := strings.Trim(r.URL.Path, "/")
-	id := chi.URLParam(r, "id")
-	longURL, err := h.Store.Get(id)
+func (h ServerStorage) GetFullURL(c *gin.Context) {
+	c.Writer.Header().Set("Content-Type", "text/plain")
+	shortURL := c.Param("id")
+	fullURL, err := h.Storage.GetFullURL(c, shortURL)
 	if err != nil {
-		buildErrResponse(w, http.StatusBadRequest, []byte(err.Error()))
+		c.Writer.WriteHeader(http.StatusNotFound)
 		return
 	}
-	w.Header().Set("Location", longURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	if !strings.HasPrefix(fullURL, config.HTTP) {
+		fullURL = config.HTTP + strings.TrimPrefix(fullURL, "//")
+	}
+	c.Redirect(http.StatusTemporaryRedirect, fullURL)
+
 }
 
-func buildErrResponse(w http.ResponseWriter, statusCode int, body []byte) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(statusCode)
-	w.Write(body)
+func (h ServerStorage) ResponseBadRequest(c *gin.Context) {
+	c.String(http.StatusBadRequest, "")
 }

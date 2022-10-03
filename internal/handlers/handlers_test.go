@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,12 +16,12 @@ import (
 func TestNewServerStore(t *testing.T) {
 	tests := []struct {
 		name    string
-		want    *ServerStore
+		want    *ServerStorage
 		wantErr bool
 	}{
 		{
 			name:    "Positive test",
-			want:    &ServerStore{Store: repository.New()},
+			want:    &ServerStorage{Storage: repository.NewStorage()},
 			wantErr: false,
 		},
 		{
@@ -31,7 +32,7 @@ func TestNewServerStore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewServerStore()
+			got := NewServerStorage()
 			if err := reflect.DeepEqual(got, tt.want); err == tt.wantErr {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
@@ -51,6 +52,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		arg     string
 		want    want
 		wantErr bool
+		preset  bool
 	}{
 		{
 			name:    "Positive test",
@@ -58,10 +60,11 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			arg:     "http://test.test/test1",
 			method:  http.MethodGet,
 			want: want{
-				statusCode: 307,
+				statusCode: http.StatusTemporaryRedirect,
 				location:   "http://test.test/test1",
 			},
 			wantErr: false,
+			preset:  true,
 		},
 		{
 			name:    "Negative test with another method",
@@ -69,17 +72,32 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			arg:     "http://test.test/test1",
 			method:  http.MethodPost,
 			want: want{
-				statusCode: 405,
+				statusCode: http.StatusBadRequest,
 			},
-			wantErr: false,
+			wantErr: true,
+			preset:  true,
+		},
+		{
+			name:    "Negative without url in DB",
+			request: "/0",
+			arg:     "http://test.test/test1",
+			method:  http.MethodGet,
+			want: want{
+				statusCode: http.StatusNotFound,
+			},
+			wantErr: true,
+			preset:  false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			controller := NewServerStore()
+			ctx := context.Background()
+			controller := NewServerStorage()
 			r := NewRouter(controller)
-			_, err := controller.Store.Insert(tt.arg)
-			require.NoError(t, err)
+			if tt.preset {
+				_, err := controller.Storage.InsertURL(ctx, tt.arg)
+				require.NoError(t, err)
+			}
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 
@@ -106,7 +124,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 	}
 }
 
-func TestServerStore_ReductionURL(t *testing.T) {
+func TestServerStore_CreateShortURL(t *testing.T) {
 	type want struct {
 		statusCode int
 		shortURL   string
@@ -127,28 +145,40 @@ func TestServerStore_ReductionURL(t *testing.T) {
 			method:  http.MethodPost,
 			reqBody: "https://www.test.net/test",
 			want: want{
-				respType:   "text/plain ; charset=utf-8",
-				shortURL:   "0",
-				statusCode: 201,
+				respType:   "text/plain",
+				shortURL:   "http://localhost:8080/0",
+				statusCode: http.StatusCreated,
 			},
 			wantErr: false,
 		},
 		{
-			name:    "Negative test with anoter method",
+			name:    "Negative test with another method",
 			request: "/",
 			method:  http.MethodGet,
 			reqBody: "https://www.test.net/test",
 			want: want{
-				respType:   "text/plain ; charset=utf-8",
+				respType:   "text/plain",
 				shortURL:   "0",
-				statusCode: 405,
+				statusCode: http.StatusBadRequest,
+			},
+			wantErr: true,
+		},
+		{
+			name:    "Negative test with nil body",
+			request: "/",
+			method:  http.MethodPost,
+			reqBody: "",
+			want: want{
+				respType:   "text/plain ; charset=utf-8",
+				shortURL:   "",
+				statusCode: http.StatusInternalServerError,
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			controller := NewServerStore()
+			controller := NewServerStorage()
 			r := NewRouter(controller)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
