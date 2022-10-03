@@ -53,16 +53,11 @@ func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := strings.Trim(r.URL.Path, "/")
-	id = id[len(id)-1:]
 	longURL, err := h.Store.GetFullURL(id)
-	fullURL := longURL.Full
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	if !strings.HasPrefix(fullURL, "http://") {
-		fullURL = "http://" + strings.TrimPrefix(fullURL, "//")
-	}
-	w.Header().Set("Location", fullURL)
+	w.Header().Set("Location", longURL.Full)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }

@@ -61,7 +61,7 @@ func (s *Storage) InsertURL(fullURL string) (string, error) {
 	}
 	s.Lock()
 	defer s.Unlock()
-	var newURL = URL{Full: fullURL, Short: strconv.Itoa(s.Counter)}
+	var newURL = URL{Full: fullURL, Short: "/" + strconv.Itoa(s.Counter)}
 	s.Data[s.Counter] = newURL
 	s.Counter++
 	return newURL.Short, nil
