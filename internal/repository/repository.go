@@ -6,44 +6,61 @@ import (
 	"sync"
 )
 
+type URL struct {
+	Full  string
+	Short string
+}
+
+type FullURL struct {
+	Full string
+}
+type ShortURl struct {
+	Short string
+}
 type Storage struct {
-	CountID           int
-	IDKeyURLStorage   map[string]string
-	FullURLKeyStorage map[string]string
+	Counter int
+	Data    map[int]URL
 	sync.Mutex
 }
 
 func New() *Storage {
 	return &Storage{
-		CountID:           0,
-		IDKeyURLStorage:   make(map[string]string),
-		FullURLKeyStorage: make(map[string]string),
+		Counter: 0,
+		Data:    make(map[int]URL),
 	}
 }
 
-func (s *Storage) Insert(fullURL string) (string, error) {
-	if fullURL == "" {
-		return "", errors.New("ErrEmptyNotAllowed")
-	}
+func (s *Storage) GetShortURL(fullURL string) (*ShortURl, error) {
 	s.Lock()
 	defer s.Unlock()
-	if value, ok := s.FullURLKeyStorage[fullURL]; ok {
-		return value, nil
+	for _, element := range s.Data {
+		if element.Full == fullURL {
+			return &ShortURl{Short: element.Short}, nil
+		}
 	}
-	s.IDKeyURLStorage[strconv.Itoa(s.CountID)] = fullURL
-	s.FullURLKeyStorage[fullURL] = strconv.Itoa(s.CountID)
-	s.CountID++
-	return s.FullURLKeyStorage[fullURL], nil
+	return nil, errors.New("wrong URL")
 }
 
-func (s *Storage) Get(key string) (string, error) {
-	if key == "" {
-		return "", errors.New("ErrEmptyNotAllowed")
+func (s *Storage) GetFullURL(shortURL string) (*FullURL, error) {
+	s.Lock()
+	defer s.Unlock()
+	for _, element := range s.Data {
+		if element.Short == shortURL {
+			return &FullURL{Full: element.Full}, nil
+		}
+	}
+	return nil, errors.New("wrong URL")
+}
+
+func (s *Storage) InsertURL(fullURL string) (string, error) {
+	short, err := s.GetShortURL(fullURL)
+	if err == nil {
+		return short.Short, nil
 	}
 	s.Lock()
 	defer s.Unlock()
-	if _, ok := s.IDKeyURLStorage[key]; !ok {
-		return "", errors.New("ErrNoKeyStorage")
-	}
-	return s.IDKeyURLStorage[key], nil
+	var newURL = URL{Full: fullURL, Short: strconv.Itoa(s.Counter)}
+	s.Data[s.Counter] = newURL
+	s.Counter++
+	return newURL.Short, nil
 }

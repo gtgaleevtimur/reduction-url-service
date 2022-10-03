@@ -18,13 +18,13 @@ func NewServerStore() *ServerStore {
 func (h ServerStore) Root(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	if len(path) == 1 {
-		h.ReductionURL(w, r)
+		h.CreateShortURL(w, r)
 	} else {
 		h.GetFullURL(w, r)
 	}
 }
 
-func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
+func (h ServerStore) CreateShortURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Need POST requests!", http.StatusMethodNotAllowed)
 		return
@@ -37,7 +37,7 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 	}
 	inputURL := string(body)
 	var result []byte
-	shortURL, err := h.Store.Insert(inputURL)
+	shortURL, err := h.Store.InsertURL(inputURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -54,11 +54,11 @@ func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := strings.Trim(r.URL.Path, "/")
-	longURL, err := h.Store.Get(id)
+	longURL, err := h.Store.GetFullURL(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	w.Header().Set("Location", longURL)
+	w.Header().Set("Location", longURL.Full)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
