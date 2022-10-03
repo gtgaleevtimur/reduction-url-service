@@ -20,7 +20,7 @@ func (h ServerStore) Root(w http.ResponseWriter, r *http.Request) {
 	if len(path) == 1 {
 		h.ReductionURL(w, r)
 	} else {
-		h.GetFullUrl(w, r)
+		h.GetFullURL(w, r)
 	}
 }
 
@@ -48,7 +48,7 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func (h ServerStore) GetFullUrl(w http.ResponseWriter, r *http.Request) {
+func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Need Get requests!", http.StatusMethodNotAllowed)
 		return
@@ -56,7 +56,7 @@ func (h ServerStore) GetFullUrl(w http.ResponseWriter, r *http.Request) {
 	id := strings.Trim(r.URL.Path, "/")
 	longURL, err := h.Store.Get(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Location", longURL)
