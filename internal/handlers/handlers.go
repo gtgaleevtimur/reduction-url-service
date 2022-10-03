@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-func NewRouter(controller *ServerStorage) *gin.Engine {
+func NewRouter(s *repository.Storage) *gin.Engine {
+	controller := NewServerHandler(s)
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.POST("/", controller.CreateShortURL)
@@ -18,15 +19,15 @@ func NewRouter(controller *ServerStorage) *gin.Engine {
 	return r
 }
 
-type ServerStorage struct {
+type ServerHandler struct {
 	Storage *repository.Storage
 }
 
-func NewServerStorage() *ServerStorage {
-	return &ServerStorage{Storage: repository.NewStorage()}
+func NewServerHandler(s *repository.Storage) *ServerHandler {
+	return &ServerHandler{Storage: s}
 }
 
-func (h ServerStorage) CreateShortURL(c *gin.Context) {
+func (h ServerHandler) CreateShortURL(c *gin.Context) {
 	fullURL, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
@@ -42,7 +43,7 @@ func (h ServerStorage) CreateShortURL(c *gin.Context) {
 	c.String(http.StatusCreated, exShortURL)
 }
 
-func (h ServerStorage) GetFullURL(c *gin.Context) {
+func (h ServerHandler) GetFullURL(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
 	shortURL := c.Param("id")
 	fullURL, err := h.Storage.GetFullURL(c, shortURL)
@@ -57,6 +58,6 @@ func (h ServerStorage) GetFullURL(c *gin.Context) {
 
 }
 
-func (h ServerStorage) ResponseBadRequest(c *gin.Context) {
+func (h ServerHandler) ResponseBadRequest(c *gin.Context) {
 	c.String(http.StatusBadRequest, "")
 }

@@ -1,12 +1,14 @@
 package repository
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
 )
 
-func TestNew(t *testing.T) {
+func TestNewStorage(t *testing.T) {
 	tests := []struct {
 		name    string
 		want    *Storage
@@ -15,9 +17,8 @@ func TestNew(t *testing.T) {
 		{
 			name: "Positive test",
 			want: &Storage{
-				CountID:           0,
-				IDKeyURLStorage:   make(map[string]string),
-				FullURLKeyStorage: make(map[string]string),
+				Counter: 0,
+				Data:    make(map[int]URL),
 			},
 			wantErr: false,
 		}, {
@@ -28,7 +29,7 @@ func TestNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := New()
+			got := NewStorage()
 			if err := reflect.DeepEqual(got, tt.want); err == tt.wantErr {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
@@ -36,7 +37,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestStorage_Insert(t *testing.T) {
+func TestStorage_InsertURL(t *testing.T) {
 	tests := []struct {
 		name    string
 		longURL string
@@ -68,11 +69,13 @@ func TestStorage_Insert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := New()
+			db := NewStorage()
+			ctx := context.Background()
 			if tt.preset {
-				db.Insert(tt.longURL)
+				_, err := db.InsertURL(ctx, tt.longURL)
+				require.NoError(t, err)
 			}
-			got, err := db.Insert(tt.longURL)
+			got, err := db.InsertURL(ctx, tt.longURL)
 			if !tt.wantErr {
 				assert.NoError(t, err)
 			}
@@ -113,15 +116,67 @@ func TestStorage_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := New()
+			db := NewStorage()
+			ctx := context.Background()
 			if !tt.wantErr {
-				db.Insert(tt.longURL)
-				got, err := db.Get(tt.shortURL)
+				_, err := db.InsertURL(ctx, tt.longURL)
+				require.NoError(t, err)
+				got, err := db.GetFullURL(ctx, tt.shortURL)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.want, got)
 			}
 			if tt.wantErr {
-				got, err := db.Get(tt.shortURL)
+				got, err := db.GetFullURL(ctx, tt.shortURL)
+				assert.Equal(t, tt.want, got)
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestStorage_GetShortURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		shortURL string
+		longURL  string
+		want     string
+		wantErr  bool
+	}{
+		{
+			name:     "Positive test",
+			shortURL: "0",
+			longURL:  "http://test.test/test1",
+			want:     "0",
+			wantErr:  false,
+		},
+		{
+			name:     "Negative test not exist",
+			shortURL: "0",
+			longURL:  "http://test.test/test1",
+			want:     "",
+			wantErr:  true,
+		},
+		{
+			name:     "Negative test with nil input",
+			shortURL: "",
+			longURL:  "http://test.test/test1",
+			want:     "",
+			wantErr:  true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := NewStorage()
+			ctx := context.Background()
+			if !tt.wantErr {
+				_, err := db.InsertURL(ctx, tt.longURL)
+				require.NoError(t, err)
+				got, err := db.GetShortURL(ctx, tt.longURL)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+			if tt.wantErr {
+				got, err := db.GetShortURL(ctx, tt.longURL)
 				assert.Equal(t, tt.want, got)
 				assert.Error(t, err)
 			}

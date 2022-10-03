@@ -16,12 +16,12 @@ import (
 func TestNewServerStore(t *testing.T) {
 	tests := []struct {
 		name    string
-		want    *ServerStorage
+		want    *ServerHandler
 		wantErr bool
 	}{
 		{
 			name:    "Positive test",
-			want:    &ServerStorage{Storage: repository.NewStorage()},
+			want:    &ServerHandler{Storage: repository.NewStorage()},
 			wantErr: false,
 		},
 		{
@@ -32,7 +32,7 @@ func TestNewServerStore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewServerStorage()
+			got := NewServerHandler(repository.NewStorage())
 			if err := reflect.DeepEqual(got, tt.want); err == tt.wantErr {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
@@ -92,10 +92,10 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			controller := NewServerStorage()
+			controller := repository.NewStorage()
 			r := NewRouter(controller)
 			if tt.preset {
-				_, err := controller.Storage.InsertURL(ctx, tt.arg)
+				_, err := controller.InsertURL(ctx, tt.arg)
 				require.NoError(t, err)
 			}
 			ts := httptest.NewServer(r)
@@ -178,7 +178,7 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			controller := NewServerStorage()
+			controller := repository.NewStorage()
 			r := NewRouter(controller)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
