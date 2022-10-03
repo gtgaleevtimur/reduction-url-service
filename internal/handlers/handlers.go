@@ -7,30 +7,24 @@ import (
 	"strings"
 )
 
-type MyHandlers interface {
-	ReductionURL(w http.ResponseWriter, r *http.Request)
-	GetFullURL(w http.ResponseWriter, r *http.Request)
-	Root(w http.ResponseWriter, r *http.Request)
-}
-
 type ServerStore struct {
 	Store *repository.Storage
 }
 
 func NewServerStore() *ServerStore {
-	return &ServerStore{Store: repository.New()}
+	return &ServerStore{Store: repository.NewStorage()}
 }
 
 func (h ServerStore) Root(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	if len(path) == 1 {
-		h.ReductionURL(w, r)
+		h.CreateShortURL(w, r)
 	} else {
 		h.GetFullURL(w, r)
 	}
 }
 
-func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
+func (h ServerStore) CreateShortURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Need POST requests!", http.StatusMethodNotAllowed)
 		return
@@ -42,13 +36,12 @@ func (h ServerStore) ReductionURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	inputURL := string(body)
-	var result []byte
-	shortURL, err := h.Store.Insert(inputURL)
+	shortURL, err := h.Store.InsertURL(inputURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	result = []byte(shortURL)
+	result := []byte(shortURL)
 	w.Header().Set("Content-Type", "text/plain ; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
@@ -60,9 +53,9 @@ func (h ServerStore) GetFullURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := strings.Trim(r.URL.Path, "/")
-	longURL, err := h.Store.Get(id)
+	longURL, err := h.Store.GetFullURL(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Location", longURL)

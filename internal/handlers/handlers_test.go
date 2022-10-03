@@ -20,7 +20,7 @@ func TestNewServerStore(t *testing.T) {
 	}{
 		{
 			name:    "Positive test",
-			want:    &ServerStore{Store: repository.New()},
+			want:    &ServerStore{Store: repository.NewStorage()},
 			wantErr: false,
 		},
 		{
@@ -39,7 +39,7 @@ func TestNewServerStore(t *testing.T) {
 	}
 }
 
-func TestServerStore_GetFullUrl(t *testing.T) {
+func TestServerStore_GetFullURL(t *testing.T) {
 	type want struct {
 		statusCode int
 		location   string
@@ -64,7 +64,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "Negative test with anoteh method",
+			name:    "Negative test with another method",
 			request: "/0",
 			arg:     "http://test.test/test1",
 			method:  http.MethodPost,
@@ -73,6 +73,16 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name:    "Negative without url in DB",
+			request: "/0",
+			arg:     "http://test.test/test1",
+			method:  http.MethodPost,
+			want: want{
+				statusCode: 405,
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,7 +90,8 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			w := httptest.NewRecorder()
 			s := NewServerStore()
 			if !tt.wantErr {
-				s.Store.Insert(tt.arg)
+				_, err := s.Store.InsertURL(tt.arg)
+				require.NoError(t, err)
 			}
 			h := http.HandlerFunc(s.GetFullURL)
 			h.ServeHTTP(w, request)
@@ -99,7 +110,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 	}
 }
 
-func TestServerStore_ReductionURL(t *testing.T) {
+func TestServerStore_CreateShorlURL(t *testing.T) {
 	type want struct {
 		statusCode int
 		shortURL   string
@@ -118,7 +129,7 @@ func TestServerStore_ReductionURL(t *testing.T) {
 			name:    "Positive test",
 			request: "/",
 			method:  http.MethodPost,
-			reqBody: "https://www.test.net/test",
+			reqBody: "http://www.test.net/test",
 			want: want{
 				respType:   "text/plain ; charset=utf-8",
 				shortURL:   "0",
@@ -127,14 +138,26 @@ func TestServerStore_ReductionURL(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "Negative test with anoter method",
+			name:    "Negative test with another method",
 			request: "/",
 			method:  http.MethodGet,
-			reqBody: "https://www.test.net/test",
+			reqBody: "http://www.test.net/test",
 			want: want{
 				respType:   "text/plain ; charset=utf-8",
 				shortURL:   "0",
 				statusCode: 405,
+			},
+			wantErr: true,
+		},
+		{
+			name:    "Negative test with nil body",
+			request: "/",
+			method:  http.MethodPost,
+			reqBody: "",
+			want: want{
+				respType:   "text/plain ; charset=utf-8",
+				shortURL:   "",
+				statusCode: 500,
 			},
 			wantErr: true,
 		},
@@ -144,7 +167,7 @@ func TestServerStore_ReductionURL(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.request, bytes.NewBuffer([]byte(tt.reqBody)))
 			w := httptest.NewRecorder()
 			s := NewServerStore()
-			h := http.HandlerFunc(s.ReductionURL)
+			h := http.HandlerFunc(s.CreateShortURL)
 			h.ServeHTTP(w, request)
 			result := w.Result()
 
