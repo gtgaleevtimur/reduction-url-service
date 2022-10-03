@@ -14,7 +14,7 @@ type URL struct {
 type FullURL struct {
 	Full string
 }
-type ShortURl struct {
+type ShortURL struct {
 	Short string
 }
 type Storage struct {
@@ -30,12 +30,12 @@ func New() *Storage {
 	}
 }
 
-func (s *Storage) GetShortURL(fullURL string) (*ShortURl, error) {
+func (s *Storage) GetShortURL(fullURL string) (*ShortURL, error) {
 	s.Lock()
 	defer s.Unlock()
 	for _, element := range s.Data {
 		if element.Full == fullURL {
-			return &ShortURl{Short: element.Short}, nil
+			return &ShortURL{Short: element.Short}, nil
 		}
 	}
 	return nil, errors.New("wrong URL")
