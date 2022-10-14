@@ -92,7 +92,7 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 	sURL.Short = config.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
 	if err != nil {
-		c.String(http.StatusNotFound, "")
+		c.String(http.StatusInternalServerError, "")
 	}
 	c.String(responseStatus, string(respBody))
 }
