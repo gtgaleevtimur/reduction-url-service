@@ -81,18 +81,18 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 	if err != nil {
 		fromInsert, err := h.Storage.InsertURL(c, full.Full)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "")
+			c.String(http.StatusBadRequest, "")
 			return
 		}
 		sURL.Short = fromInsert
 		responseStatus = http.StatusCreated
 	} else {
-		responseStatus = http.StatusCreated
+		responseStatus = http.StatusOK
 	}
 	sURL.Short = config.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "")
+		c.String(http.StatusNotFound, "")
 	}
 	c.String(responseStatus, string(respBody))
 }
