@@ -140,7 +140,7 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 			want: want{
 				respType:   "text/plain ; charset=utf-8",
 				shortURL:   "",
-				statusCode: http.StatusInternalServerError,
+				statusCode: http.StatusBadRequest,
 			},
 			wantErr: true,
 		},
@@ -201,7 +201,7 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 				Full: "",
 			},
 			want: want{
-				statusCode: 500,
+				statusCode: 400,
 			},
 			wantErr: true,
 		},

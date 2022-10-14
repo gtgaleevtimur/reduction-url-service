@@ -34,12 +34,12 @@ func (h ServerHandler) CreateShortURL(c *gin.Context) {
 	fullURL, err := ioutil.ReadAll(c.Request.Body)
 	defer c.Request.Body.Close()
 	if err != nil {
-		c.String(http.StatusInternalServerError, "")
+		c.String(http.StatusBadRequest, "")
 		return
 	}
 	shortURL, err := h.Storage.InsertURL(c, string(fullURL))
 	if err != nil {
-		c.String(http.StatusInternalServerError, "")
+		c.String(http.StatusBadRequest, "")
 		return
 	}
 	exShortURL := config.ExpShortURL(shortURL)
@@ -66,13 +66,13 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "application/json")
 	reqBody, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "")
+		c.String(http.StatusBadRequest, "")
 		return
 	}
 	var full repository.FullURL
 	err = json.Unmarshal(reqBody, &full)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "")
+		c.String(http.StatusBadRequest, "")
 		return
 	}
 	var sURL repository.ShortURL
