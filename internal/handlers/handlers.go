@@ -87,7 +87,7 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 		sURL.Short = fromInsert
 		responseStatus = http.StatusCreated
 	} else {
-		responseStatus = http.StatusOK
+		responseStatus = http.StatusCreated
 	}
 	sURL.Short = config.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
