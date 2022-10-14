@@ -17,10 +17,29 @@ type Config struct {
 	BaseURL       string
 }
 
-func NewConfig() *Config {
-	return &Config{
+func NewConfig(options ...Option) *Config {
+	conf := Config{
 		ServerAddress: HostAddr + ":" + HostPort,
 		BaseURL:       HostAddr + ":" + HostPort,
+	}
+
+	for _, opt := range options {
+		opt(&conf)
+	}
+	return &conf
+}
+
+type Option func(s *Config)
+
+func WithServerAddress(hostAddr, hostPort string) Option {
+	return func(s *Config) {
+		s.ServerAddress = hostAddr + ":" + hostPort
+	}
+}
+
+func WithBaseURL(hostAddr, hostPort string) Option {
+	return func(s *Config) {
+		s.BaseURL = hostAddr + ":" + hostPort
 	}
 }
 

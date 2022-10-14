@@ -8,7 +8,7 @@ import (
 )
 
 func Run() {
-	config.Cnf = *config.NewConfig()
+	conf := config.NewConfig()
 	storage := repository.NewStorage()
-	log.Fatal(hd.NewRouter(storage).Run(config.Cnf.ServerAddress))
+	log.Fatal(hd.NewRouter(storage).Run(conf.ServerAddress))
 }

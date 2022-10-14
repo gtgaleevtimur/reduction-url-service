@@ -1,10 +1,9 @@
-POST http://localhost:8080/ HTTP/1.1
-content-type: text/plain
+POST http://localhost:8080/api/shorten HTTP/1.1
+content-type: application/json
 
-http://localhost:8080/firsturlposting
+{"url":"test.test/http"}
 
-# 201 (Created) 0
-# 404 (Not Found)
+
 
 ###
 
@@ -39,7 +38,7 @@ http://localhost:8080/thirdurlposting
 
 
 GET  http://localhost:8080/1 HTTP/1.1
-
+@no-redirect
 
 # 200 (OK)
 # 404 (Not Found)

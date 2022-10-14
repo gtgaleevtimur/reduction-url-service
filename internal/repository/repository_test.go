@@ -17,8 +17,9 @@ func TestNewStorage(t *testing.T) {
 		{
 			name: "Positive test",
 			want: &Storage{
-				Counter: 0,
-				Data:    make(map[int]URL),
+				Counter:        0,
+				FullURLKeyMap:  make(map[string]ShortURL),
+				ShortURLKeyMap: make(map[string]FullURL),
 			},
 			wantErr: false,
 		}, {
