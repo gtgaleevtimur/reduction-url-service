@@ -51,6 +51,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 				return http.ErrUseLastResponse
 			}}
 		resp, err := client.Do(req)
+		defer resp.Body.Close()
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
 		assert.Equal(t, "http://test.test/test1", resp.Header.Get("Location"))
@@ -70,6 +71,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 				return http.ErrUseLastResponse
 			}}
 		resp, err := client.Do(req)
+		defer resp.Body.Close()
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
@@ -85,6 +87,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 				return http.ErrUseLastResponse
 			}}
 		resp, err := client.Do(req)
+		defer resp.Body.Close()
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
