@@ -73,7 +73,7 @@ func (c *Config) HostAddr() string {
 func ExpShortURL(shortURL string) string {
 	x, err := os.LookupEnv("BASE_URL")
 	if err {
-		return HTTP + x + "/" + shortURL
+		return x + "/" + shortURL
 	}
 	return HTTP + HostAddr + ":" + Cnf.BasePort() + "/" + shortURL
 }
