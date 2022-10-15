@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/caarlos0/env"
 	"strings"
 )
 
@@ -13,8 +14,8 @@ const (
 var Cnf Config
 
 type Config struct {
-	ServerAddress string
-	BaseURL       string
+	ServerAddress string `env:"SERVER_ADDRESS"`
+	BaseURL       string `env:"BASE_URL"`
 }
 
 func NewConfig(options ...Option) *Config {
@@ -30,6 +31,12 @@ func NewConfig(options ...Option) *Config {
 }
 
 type Option func(s *Config)
+
+func WithParseEnv() Option {
+	return func(s *Config) {
+		env.Parse(s)
+	}
+}
 
 func WithServerAddress(hostAddr, hostPort string) Option {
 	return func(s *Config) {
