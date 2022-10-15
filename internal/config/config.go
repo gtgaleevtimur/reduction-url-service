@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/caarlos0/env"
+	"os"
 	"strings"
 )
 
@@ -70,5 +71,9 @@ func (c *Config) HostAddr() string {
 }
 
 func ExpShortURL(shortURL string) string {
+	x, err := os.LookupEnv("BASE_URL")
+	if err {
+		return HTTP + x + "/" + shortURL
+	}
 	return HTTP + HostAddr + ":" + Cnf.BasePort() + "/" + shortURL
 }
