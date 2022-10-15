@@ -30,11 +30,11 @@ func NewConfig(options ...Option) *Config {
 	return &conf
 }
 
-type Option func(s *Config)
+type Option func(*Config)
 
 func WithParseEnv() Option {
-	return func(s *Config) {
-		env.Parse(s)
+	return func(c *Config) {
+		env.Parse(c)
 	}
 }
 
@@ -58,6 +58,15 @@ func (c *Config) BasePort() string {
 	} else {
 		return HostPort
 	}
+}
+
+func (c *Config) HostAddr() string {
+	part := strings.Split(c.BaseURL, ":")
+	if strings.HasPrefix(part[0], HTTP) {
+		str := strings.TrimSuffix(part[0], HTTP)
+		return str
+	}
+	return part[0]
 }
 
 func ExpShortURL(shortURL string) string {
