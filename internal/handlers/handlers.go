@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
@@ -14,6 +15,7 @@ func NewRouter(s *repository.Storage, c *config.Config) *gin.Engine {
 	controller := newServerHandler(s, c)
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithDecompressFn(gzip.DefaultDecompressHandle)))
 	api := router.Group("/api")
 	api.POST("/shorten", controller.GetShortURL)
 	router.POST("/", controller.CreateShortURL)
