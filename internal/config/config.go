@@ -77,5 +77,5 @@ func ExpShortURL(shortURL string) string {
 	if ok {
 		return x + "/" + shortURL
 	}
-	return HTTP + HostAddr + ":" + Cnf.BasePort() + "/" + shortURL
+	return HTTP + HostAddr + ":" + HostPort + "/" + shortURL
 }
