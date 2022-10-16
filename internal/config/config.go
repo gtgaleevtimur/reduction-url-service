@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"github.com/caarlos0/env"
 	"os"
 	"strings"
@@ -38,7 +39,15 @@ type Option func(*Config)
 func WithParseEnv() Option {
 	return func(c *Config) {
 		env.Parse(c)
+		c.ParseFlags()
 	}
+}
+
+func (c *Config) ParseFlags() {
+	flag.StringVar(&c.ServerAddress, "a", c.ServerAddress, "SERVER_ADDRESS")
+	flag.StringVar(&c.BaseURL, "b", c.BaseURL, "BASE_URL")
+	flag.StringVar(&c.StoragePath, "f", c.StoragePath, "FILE_STORAGE_PATH")
+	flag.Parse()
 }
 
 func WithServerAddress(hostAddr, hostPort string) Option {
