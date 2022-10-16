@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"log"
 	"os"
 	"strconv"
@@ -32,14 +33,14 @@ type Storage struct {
 	sync.Mutex
 }
 
-func NewStorage() *Storage {
+func NewStorage(c *config.Config) *Storage {
 	s := &Storage{
 		Counter:        0,
 		FullURLKeyMap:  make(map[string]ShortURL),
 		ShortURLKeyMap: make(map[string]FullURL),
 	}
 
-	err := s.LoadRecoveryStorage()
+	err := s.LoadRecoveryStorage(c.StoragePath)
 	if err != nil {
 		log.Println(err)
 	}
@@ -93,11 +94,7 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string) (string, error)
 	return sURL.Short, nil
 }
 
-func (s *Storage) LoadRecoveryStorage() error {
-	str, ok := os.LookupEnv("FILE_STORAGE_PATH")
-	if !ok {
-		return errors.New("env FILE_STORAGE_PATH error")
-	}
+func (s *Storage) LoadRecoveryStorage(str string) error {
 	file, err := os.OpenFile(str, os.O_RDONLY|os.O_CREATE, 0777)
 	if err != nil {
 		return err

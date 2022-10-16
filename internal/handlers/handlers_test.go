@@ -23,13 +23,13 @@ func TestNewServerStore(t *testing.T) {
 	}{
 		{
 			name:    "Positive test",
-			want:    &ServerHandler{Storage: repository.NewStorage(), Conf: config.NewConfig()},
+			want:    &ServerHandler{Storage: repository.NewStorage(config.NewConfig()), Conf: config.NewConfig()},
 			require: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := newServerHandler(repository.NewStorage(), config.NewConfig())
+			got := newServerHandler(repository.NewStorage(config.NewConfig()), config.NewConfig())
 			err := reflect.DeepEqual(got, tt.want)
 			require.Equal(t, tt.require, err)
 		})
@@ -39,8 +39,8 @@ func TestNewServerStore(t *testing.T) {
 func TestServerStore_GetFullUrl(t *testing.T) {
 	t.Run("Positive test", func(t *testing.T) {
 		ctx := context.Background()
-		controller := repository.NewStorage()
 		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
 		_, err := controller.InsertURL(ctx, "http://test.test/test1")
 		require.NoError(t, err)
@@ -60,8 +60,8 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 	})
 	t.Run("Negative test with another method", func(t *testing.T) {
 		ctx := context.Background()
-		controller := repository.NewStorage()
 		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
 		_, err := controller.InsertURL(ctx, "http://test.test/test1")
 		require.NoError(t, err)
@@ -79,8 +79,8 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 	t.Run("Negative without url in DB", func(t *testing.T) {
-		controller := repository.NewStorage()
 		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
 		ts := httptest.NewServer(r)
 		defer ts.Close()
@@ -151,8 +151,8 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			controller := repository.NewStorage()
 			cnf := config.NewConfig()
+			controller := repository.NewStorage(cnf)
 			r := NewRouter(controller, cnf)
 			ts := httptest.NewServer(r)
 			defer ts.Close()
@@ -253,8 +253,8 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			controller := repository.NewStorage()
 			cnf := config.NewConfig()
+			controller := repository.NewStorage(cnf)
 			r := NewRouter(controller, cnf)
 			ts := httptest.NewServer(r)
 			defer ts.Close()

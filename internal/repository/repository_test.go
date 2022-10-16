@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"reflect"
@@ -30,7 +31,8 @@ func TestNewStorage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewStorage()
+			cnf := config.NewConfig()
+			got := NewStorage(cnf)
 			if err := reflect.DeepEqual(got, tt.want); err == tt.wantErr {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
@@ -70,7 +72,8 @@ func TestStorage_InsertURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := NewStorage()
+			cnf := config.NewConfig()
+			db := NewStorage(cnf)
 			ctx := context.Background()
 			if tt.preset {
 				_, err := db.InsertURL(ctx, tt.longURL)
@@ -117,7 +120,8 @@ func TestStorage_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := NewStorage()
+			cnf := config.NewConfig()
+			db := NewStorage(cnf)
 			ctx := context.Background()
 			if !tt.wantErr {
 				_, err := db.InsertURL(ctx, tt.longURL)
@@ -167,7 +171,8 @@ func TestStorage_GetShortURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := NewStorage()
+			cnf := config.NewConfig()
+			db := NewStorage(cnf)
 			ctx := context.Background()
 			if !tt.wantErr {
 				_, err := db.InsertURL(ctx, tt.longURL)
