@@ -17,12 +17,14 @@ var Cnf Config
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS"`
 	BaseURL       string `env:"BASE_URL"`
+	StoragePath   string `env:"FILE_STORAGE_PATH"`
 }
 
 func NewConfig(options ...Option) *Config {
 	conf := Config{
 		ServerAddress: HostAddr + ":" + HostPort,
 		BaseURL:       HostAddr + ":" + HostPort,
+		StoragePath:   "",
 	}
 
 	for _, opt := range options {
@@ -71,8 +73,8 @@ func (c *Config) HostAddr() string {
 }
 
 func ExpShortURL(shortURL string) string {
-	x, err := os.LookupEnv("BASE_URL")
-	if err {
+	x, ok := os.LookupEnv("BASE_URL")
+	if ok {
 		return x + "/" + shortURL
 	}
 	return HTTP + HostAddr + ":" + Cnf.BasePort() + "/" + shortURL
