@@ -3,7 +3,6 @@ package config
 import (
 	"flag"
 	"github.com/caarlos0/env"
-	"os"
 	"strings"
 )
 
@@ -12,8 +11,6 @@ const (
 	HostAddr string = "localhost"
 	HTTP     string = "http://"
 )
-
-var Cnf Config
 
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS"`
@@ -50,41 +47,9 @@ func (c *Config) ParseFlags() {
 	flag.Parse()
 }
 
-func WithServerAddress(hostAddr, hostPort string) Option {
-	return func(s *Config) {
-		s.ServerAddress = hostAddr + ":" + hostPort
+func (c *Config) ExpShortURL(shortURL string) string {
+	if strings.HasPrefix(c.BaseURL, HTTP) {
+		return c.BaseURL + "/" + shortURL
 	}
-}
-
-func WithBaseURL(hostAddr, hostPort string) Option {
-	return func(s *Config) {
-		s.BaseURL = hostAddr + ":" + hostPort
-	}
-}
-
-func (c *Config) BasePort() string {
-	part := strings.Split(c.BaseURL, ":")
-	cnt := len(part)
-	if cnt > 1 {
-		return part[cnt-1]
-	} else {
-		return HostPort
-	}
-}
-
-func (c *Config) HostAddr() string {
-	part := strings.Split(c.BaseURL, ":")
-	if strings.HasPrefix(part[0], HTTP) {
-		str := strings.TrimSuffix(part[0], HTTP)
-		return str
-	}
-	return part[0]
-}
-
-func ExpShortURL(shortURL string) string {
-	x, ok := os.LookupEnv("BASE_URL")
-	if ok {
-		return x + "/" + shortURL
-	}
-	return HTTP + HostAddr + ":" + Cnf.BasePort() + "/" + shortURL
+	return HTTP + HostAddr + ":" + HostPort + "/" + shortURL
 }

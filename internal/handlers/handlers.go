@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-func NewRouter(s *repository.Storage) *gin.Engine {
-	controller := NewServerHandler(s)
+func NewRouter(s *repository.Storage, c *config.Config) *gin.Engine {
+	controller := newServerHandler(s, c)
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	api := router.Group("/api")
@@ -24,10 +24,11 @@ func NewRouter(s *repository.Storage) *gin.Engine {
 
 type ServerHandler struct {
 	Storage *repository.Storage
+	Conf    *config.Config
 }
 
-func NewServerHandler(s *repository.Storage) *ServerHandler {
-	return &ServerHandler{Storage: s}
+func newServerHandler(s *repository.Storage, c *config.Config) *ServerHandler {
+	return &ServerHandler{Storage: s, Conf: c}
 }
 
 func (h ServerHandler) CreateShortURL(c *gin.Context) {
@@ -42,7 +43,7 @@ func (h ServerHandler) CreateShortURL(c *gin.Context) {
 		c.String(http.StatusBadRequest, "")
 		return
 	}
-	exShortURL := config.ExpShortURL(shortURL)
+	exShortURL := h.Conf.ExpShortURL(shortURL)
 	c.Writer.Header().Set("Content-Type", "text/plain")
 	c.String(http.StatusCreated, exShortURL)
 }
@@ -89,7 +90,7 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 	} else {
 		responseStatus = http.StatusOK
 	}
-	sURL.Short = config.ExpShortURL(sURL.Short)
+	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
