@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
 func TestNewStorage(t *testing.T) {

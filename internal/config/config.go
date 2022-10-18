@@ -2,8 +2,9 @@ package config
 
 import (
 	"flag"
-	"github.com/caarlos0/env"
 	"strings"
+
+	"github.com/caarlos0/env"
 )
 
 const (

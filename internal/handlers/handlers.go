@@ -2,13 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
+
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
 
 func NewRouter(s *repository.Storage, c *config.Config) *gin.Engine {
@@ -72,6 +74,7 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 		c.String(http.StatusBadRequest, "")
 		return
 	}
+	defer c.Request.Body.Close()
 	var full repository.FullURL
 	err = json.Unmarshal(reqBody, &full)
 	if err != nil {

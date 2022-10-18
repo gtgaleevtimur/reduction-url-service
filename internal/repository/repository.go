@@ -1,15 +1,14 @@
 package repository
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
 	"errors"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
+	"io"
 	"log"
-	"os"
 	"strconv"
 	"sync"
+
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
 type URL struct {
@@ -29,7 +28,6 @@ type Storage struct {
 	Counter        int
 	FullURLKeyMap  map[string]ShortURL
 	ShortURLKeyMap map[string]FullURL
-	recoveryDisk   string
 	sync.Mutex
 }
 
@@ -85,8 +83,8 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string) (string, error)
 		Full:  fURL,
 		Short: sURL,
 	}
-	if len(s.recoveryDisk) > 0 {
-		err = s.AddToRecoveryStorage(&URLItem)
+	if fileWriter != nil {
+		err = fileWriter.Write(&URLItem)
 		if err != nil {
 			return "", err
 		}
@@ -95,48 +93,30 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string) (string, error)
 }
 
 func (s *Storage) LoadRecoveryStorage(str string) error {
-	file, err := os.OpenFile(str, os.O_RDONLY|os.O_CREATE, 0777)
+	if str == "" {
+		return errors.New(" err FILE_STORAGE_PATH is nil ")
+	}
+	s.Lock()
+	defer s.Unlock()
+	fileReader, err := NewReader(str)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	s.recoveryDisk = str
-	scanner := bufio.NewScanner(file)
+	fileWriter, err = NewWriter(str)
+	if err != nil {
+		return err
+	}
 	for {
-		if !scanner.Scan() {
-			return scanner.Err()
+		rURL, err := fileReader.Read()
+		if errors.Is(err, io.EOF) {
+			break
 		}
-		data := scanner.Bytes()
-		URLItem := URL{}
-		err = json.Unmarshal(data, &URLItem)
-		if err == nil {
-			func() {
-				s.Lock()
-				defer s.Unlock()
-				s.Counter++
-				s.FullURLKeyMap[URLItem.Full.Full] = URLItem.Short
-				s.ShortURLKeyMap[URLItem.Short.Short] = URLItem.Full
-			}()
+		if err != nil {
+			return err
 		}
+		s.FullURLKeyMap[rURL.Full.Full] = rURL.Short
+		s.ShortURLKeyMap[rURL.Short.Short] = rURL.Full
+		s.Counter++
 	}
-}
-
-func (s *Storage) AddToRecoveryStorage(URLItem *URL) error {
-	file, err := os.OpenFile(s.recoveryDisk, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	data, err := json.Marshal(&URLItem)
-	if err != nil {
-		return err
-	}
-	writer := bufio.NewWriter(file)
-	if _, err := writer.Write(data); err != nil {
-		return err
-	}
-	if err := writer.WriteByte('\n'); err != nil {
-		return err
-	}
-	return writer.Flush()
+	return nil
 }

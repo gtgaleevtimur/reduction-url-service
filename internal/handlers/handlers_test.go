@@ -4,34 +4,32 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
 
 func TestNewServerStore(t *testing.T) {
 	tests := []struct {
-		name    string
-		want    *ServerHandler
-		require bool
+		name string
+		want *ServerHandler
 	}{
 		{
-			name:    "Positive test",
-			want:    &ServerHandler{Storage: repository.NewStorage(config.NewConfig()), Conf: config.NewConfig()},
-			require: true,
+			name: "Positive test",
+			want: &ServerHandler{Storage: repository.NewStorage(config.NewConfig()), Conf: config.NewConfig()},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := newServerHandler(repository.NewStorage(config.NewConfig()), config.NewConfig())
-			err := reflect.DeepEqual(got, tt.want)
-			require.Equal(t, tt.require, err)
+			assert.Equal(t, got, tt.want)
 		})
 	}
 }
@@ -54,9 +52,12 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
 		assert.Equal(t, "http://test.test/test1", resp.Header.Get("Location"))
+		assert.Equal(t, "", string(body))
 	})
 	t.Run("Negative test with another method", func(t *testing.T) {
 		ctx := context.Background()
@@ -75,8 +76,11 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		assert.Equal(t, "", string(body))
 	})
 	t.Run("Negative without url in DB", func(t *testing.T) {
 		cnf := config.NewConfig()
@@ -92,8 +96,11 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		assert.Equal(t, "", string(body))
 	})
 }
 

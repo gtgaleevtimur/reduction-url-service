@@ -1,10 +1,11 @@
 package app
 
 import (
+	"log"
+
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	hd "github.com/gtgaleevtimur/reduction-url-service/internal/handlers"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
-	"log"
 )
 
 func Run() {
