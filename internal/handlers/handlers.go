@@ -82,25 +82,47 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 	var sURL repository.ShortURL
-	var responseStatus int
 	sURL.Short, err = h.Storage.GetShortURL(c, full.Full)
 	if err != nil {
-		fromInsert, err := h.Storage.InsertURL(c, full.Full)
-		if err != nil {
-			c.String(http.StatusBadRequest, "")
-			return
-		}
-		sURL.Short = fromInsert
-		responseStatus = http.StatusCreated
-	} else {
-		responseStatus = http.StatusOK
+		h.insertHelper(c)
+		return
 	}
 	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
+		return
 	}
-	c.String(responseStatus, string(respBody))
+	c.String(http.StatusOK, string(respBody))
+}
+
+func (h ServerHandler) insertHelper(c *gin.Context) {
+	reqBody, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "")
+		return
+	}
+	defer c.Request.Body.Close()
+	var full repository.FullURL
+	err = json.Unmarshal(reqBody, &full)
+	if err != nil {
+		c.String(http.StatusBadRequest, "")
+		return
+	}
+	var sURL repository.ShortURL
+	fromInsert, err := h.Storage.InsertURL(c, full.Full)
+	if err != nil {
+		c.String(http.StatusBadRequest, "")
+		return
+	}
+	sURL.Short = fromInsert
+	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
+	respBody, err := json.Marshal(sURL)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+	c.String(http.StatusCreated, string(respBody))
 }
 
 func (h ServerHandler) ResponseBadRequest(c *gin.Context) {
