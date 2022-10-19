@@ -6,8 +6,25 @@ import (
 	"sync"
 )
 
-var fileWriter *writer
-var fileReader *reader
+type FileRecover struct {
+	Writer *writer
+	Reader *reader
+}
+
+func NewFileRecover(str string) (*FileRecover, error) {
+	fileReader, err := NewReader(str)
+	if err != nil {
+		return nil, err
+	}
+	fileWriter, err := NewWriter(str)
+	if err != nil {
+		return nil, err
+	}
+	return &FileRecover{
+		Writer: fileWriter,
+		Reader: fileReader,
+	}, nil
+}
 
 type writer struct {
 	file    *os.File

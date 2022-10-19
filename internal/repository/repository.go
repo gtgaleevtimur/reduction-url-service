@@ -28,6 +28,7 @@ type Storage struct {
 	Counter        int
 	FullURLKeyMap  map[string]ShortURL
 	ShortURLKeyMap map[string]FullURL
+	FileRecover    *FileRecover
 	sync.Mutex
 }
 
@@ -83,8 +84,8 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string) (string, error)
 		Full:  fURL,
 		Short: sURL,
 	}
-	if fileWriter != nil {
-		err = fileWriter.Write(&URLItem)
+	if s.FileRecover != nil {
+		err = s.FileRecover.Writer.Write(&URLItem)
 		if err != nil {
 			return "", err
 		}
@@ -98,16 +99,13 @@ func (s *Storage) LoadRecoveryStorage(str string) error {
 	}
 	s.Lock()
 	defer s.Unlock()
-	fileReader, err := NewReader(str)
+	fileRecover, err := NewFileRecover(str)
 	if err != nil {
 		return err
 	}
-	fileWriter, err = NewWriter(str)
-	if err != nil {
-		return err
-	}
+	s.FileRecover = fileRecover
 	for {
-		rURL, err := fileReader.Read()
+		rURL, err := s.FileRecover.Reader.Read()
 		if errors.Is(err, io.EOF) {
 			break
 		}
