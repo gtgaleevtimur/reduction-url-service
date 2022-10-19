@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,9 +12,8 @@ import (
 
 func TestNewStorage(t *testing.T) {
 	tests := []struct {
-		name    string
-		want    *Storage
-		wantErr bool
+		name string
+		want *Storage
 	}{
 		{
 			name: "Positive test",
@@ -24,20 +22,13 @@ func TestNewStorage(t *testing.T) {
 				FullURLKeyMap:  make(map[string]ShortURL),
 				ShortURLKeyMap: make(map[string]FullURL),
 			},
-			wantErr: false,
-		}, {
-			name:    "Negative test",
-			want:    nil,
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cnf := config.NewConfig()
 			got := NewStorage(cnf)
-			if err := reflect.DeepEqual(got, tt.want); err == tt.wantErr {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, got, tt.want)
 		})
 	}
 }
