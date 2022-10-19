@@ -10,7 +10,7 @@ content-type: application/json
 POST http://localhost:8080/ HTTP/1.1
 content-type: text/plain
 
-http://localhost:8080/secondurlposting
+http://test.test/http
 
 # 201 (Created) 1
 # 404 (Not Found)

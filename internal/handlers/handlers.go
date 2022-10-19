@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -81,29 +82,20 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 	var sURL repository.ShortURL
-	var responseStatus int
 	sURL.Short, err = h.Storage.GetShortURL(c, full.Full)
 	if err != nil {
-		//h.insertHelper(c) // при передаче другому обработчику почему-то теряю тело запроса.
-		fromInsert, err := h.Storage.InsertURL(c, full.Full)
-		if err != nil {
-			c.String(http.StatusBadRequest, "")
-			return
-		}
-		sURL.Short = fromInsert
-		responseStatus = http.StatusCreated
-	} else {
-		responseStatus = http.StatusOK
+		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
+		h.insertHelper(c)
+		return
 	}
 	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
 	}
-	c.String(responseStatus, string(respBody))
+	c.String(http.StatusOK, string(respBody))
 }
 
-//этот сервис не работает как я хочу. хочу 1 на 1 обсудить.
 func (h ServerHandler) insertHelper(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "application/json")
 	reqBody, err := ioutil.ReadAll(c.Request.Body) //тут тело уже пустое
@@ -112,8 +104,6 @@ func (h ServerHandler) insertHelper(c *gin.Context) {
 		return
 	}
 	defer c.Request.Body.Close()
-	c.String(http.StatusCreated, string(reqBody))
-
 	var full repository.FullURL
 	err = json.Unmarshal(reqBody, &full)
 	if err != nil {
