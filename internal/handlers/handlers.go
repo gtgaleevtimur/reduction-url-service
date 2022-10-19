@@ -64,7 +64,6 @@ func (h ServerHandler) GetFullURL(c *gin.Context) {
 		fullURL = config.HTTP + strings.TrimPrefix(fullURL, "//")
 	}
 	c.Redirect(http.StatusTemporaryRedirect, fullURL)
-
 }
 
 func (h ServerHandler) GetShortURL(c *gin.Context) {
@@ -82,27 +81,39 @@ func (h ServerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 	var sURL repository.ShortURL
+	var responseStatus int
 	sURL.Short, err = h.Storage.GetShortURL(c, full.Full)
 	if err != nil {
-		h.insertHelper(c)
-		return
+		//h.insertHelper(c) // при передаче другому обработчику почему-то теряю тело запроса.
+		fromInsert, err := h.Storage.InsertURL(c, full.Full)
+		if err != nil {
+			c.String(http.StatusBadRequest, "")
+			return
+		}
+		sURL.Short = fromInsert
+		responseStatus = http.StatusCreated
+	} else {
+		responseStatus = http.StatusOK
 	}
 	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
-		return
 	}
-	c.String(http.StatusOK, string(respBody))
+	c.String(responseStatus, string(respBody))
 }
 
+//этот сервис не работает как я хочу. хочу 1 на 1 обсудить.
 func (h ServerHandler) insertHelper(c *gin.Context) {
-	reqBody, err := ioutil.ReadAll(c.Request.Body)
+	c.Writer.Header().Set("Content-Type", "application/json")
+	reqBody, err := ioutil.ReadAll(c.Request.Body) //тут тело уже пустое
 	if err != nil {
 		c.String(http.StatusBadRequest, "")
 		return
 	}
 	defer c.Request.Body.Close()
+	c.String(http.StatusCreated, string(reqBody))
+
 	var full repository.FullURL
 	err = json.Unmarshal(reqBody, &full)
 	if err != nil {
