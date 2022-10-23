@@ -7,8 +7,8 @@ import (
 )
 
 type FileRecover struct {
-	Writer *writer
-	Reader *reader
+	Writer *Writer
+	Reader *Reader
 }
 
 func NewFileRecover(str string) (*FileRecover, error) {
@@ -26,51 +26,51 @@ func NewFileRecover(str string) (*FileRecover, error) {
 	}, nil
 }
 
-type writer struct {
+type Writer struct {
 	file    *os.File
 	encoder *json.Encoder
 	sync.Mutex
 }
 
-func NewWriter(str string) (*writer, error) {
+func NewWriter(str string) (*Writer, error) {
 	file, err := os.OpenFile(str, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0664)
 	if err != nil {
 		return nil, err
 	}
-	return &writer{
+	return &Writer{
 		file:    file,
 		encoder: json.NewEncoder(file),
 	}, nil
 }
 
-func (w *writer) Write(URL *URL) error {
+func (w *Writer) Write(URL *URL) error {
 	w.Lock()
 	defer w.Unlock()
 	return w.encoder.Encode(&URL)
 }
 
-func (w *writer) Close() error {
+func (w *Writer) Close() error {
 	return w.file.Close()
 }
 
-type reader struct {
+type Reader struct {
 	file    *os.File
 	decoder *json.Decoder
 	sync.Mutex
 }
 
-func NewReader(str string) (*reader, error) {
+func NewReader(str string) (*Reader, error) {
 	file, err := os.OpenFile(str, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0664)
 	if err != nil {
 		return nil, err
 	}
-	return &reader{
+	return &Reader{
 		file:    file,
 		decoder: json.NewDecoder(file),
 	}, nil
 }
 
-func (r *reader) Read() (*URL, error) {
+func (r *Reader) Read() (*URL, error) {
 	r.Lock()
 	defer r.Unlock()
 	rURL := &URL{}
@@ -80,6 +80,6 @@ func (r *reader) Read() (*URL, error) {
 	return rURL, nil
 }
 
-func (r *reader) Close() error {
+func (r *Reader) Close() error {
 	return r.file.Close()
 }
