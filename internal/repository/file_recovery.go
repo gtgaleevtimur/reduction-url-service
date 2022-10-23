@@ -16,12 +16,10 @@ func NewFileRecover(str string) (*FileRecover, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer fileReader.Close()
 	fileWriter, err := NewWriter(str)
 	if err != nil {
 		return nil, err
 	}
-	defer fileWriter.Close()
 	return &FileRecover{
 		Writer: fileWriter,
 		Reader: fileReader,
