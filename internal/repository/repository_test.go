@@ -2,37 +2,33 @@ package repository
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"reflect"
-	"testing"
+
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
 func TestNewStorage(t *testing.T) {
 	tests := []struct {
-		name    string
-		want    *Storage
-		wantErr bool
+		name string
+		want *Storage
 	}{
 		{
 			name: "Positive test",
 			want: &Storage{
-				Counter: 0,
-				Data:    make(map[int]URL),
+				Counter:        0,
+				FullURLKeyMap:  make(map[string]ShortURL),
+				ShortURLKeyMap: make(map[string]FullURL),
 			},
-			wantErr: false,
-		}, {
-			name:    "Negative test",
-			want:    nil,
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewStorage()
-			if err := reflect.DeepEqual(got, tt.want); err == tt.wantErr {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
+			cnf := config.NewConfig()
+			got := NewStorage(cnf)
+			assert.Equal(t, got, tt.want)
 		})
 	}
 }
@@ -69,7 +65,8 @@ func TestStorage_InsertURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := NewStorage()
+			cnf := config.NewConfig()
+			db := NewStorage(cnf)
 			ctx := context.Background()
 			if tt.preset {
 				_, err := db.InsertURL(ctx, tt.longURL)
@@ -116,7 +113,8 @@ func TestStorage_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := NewStorage()
+			cnf := config.NewConfig()
+			db := NewStorage(cnf)
 			ctx := context.Background()
 			if !tt.wantErr {
 				_, err := db.InsertURL(ctx, tt.longURL)
@@ -166,7 +164,8 @@ func TestStorage_GetShortURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := NewStorage()
+			cnf := config.NewConfig()
+			db := NewStorage(cnf)
 			ctx := context.Background()
 			if !tt.wantErr {
 				_, err := db.InsertURL(ctx, tt.longURL)

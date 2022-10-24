@@ -3,14 +3,15 @@ module github.com/gtgaleevtimur/reduction-url-service
 go 1.18
 
 require (
-	github.com/go-chi/chi v1.5.4
+	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/gin-contrib/gzip v0.0.6
+	github.com/gin-gonic/gin v1.8.1
 	github.com/stretchr/testify v1.8.0
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.8.1 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
