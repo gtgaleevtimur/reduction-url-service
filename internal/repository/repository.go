@@ -148,3 +148,7 @@ func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 		return result, nil
 	}
 }
+
+func (s *Storage) Ping() error {
+	return nil
+}

@@ -7,6 +7,7 @@ type Storager interface {
 	LoadRecoveryStorage(str string) error
 	MiddlewareInsert(fURL string, userID string) (string, error)
 	GetAllUserURLs(userid string) ([]SlicedURL, error)
+	Ping() error
 }
 
 type NodeURL struct {

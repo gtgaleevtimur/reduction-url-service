@@ -35,6 +35,7 @@ func NewRouter(s repository.Storager, c *config.Config) chi.Router {
 	router.Route("/", func(router chi.Router) {
 		router.Post("/", controller.CreateShortURL)
 		router.Get("/{id}", controller.GetFullURL)
+		router.Get("/ping", controller.Ping)
 
 		router.Route("/api", func(router chi.Router) {
 			router.Post("/shorten", controller.GetShortURL)
@@ -202,6 +203,14 @@ func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
 	w.Write(urlsJSON)
 }
 
+func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
+	err := h.Storage.Ping()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+}
 func NotFound() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
