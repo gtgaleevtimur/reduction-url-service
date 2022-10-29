@@ -1,44 +1,30 @@
 package repository
 
 import (
-	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"io"
 	"log"
-	"strconv"
 	"sync"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
-type URL struct {
-	Full  FullURL
-	Short ShortURL
-}
-
-type FullURL struct {
-	Full string `json:"url"`
-}
-
-type ShortURL struct {
-	Short string `json:"result"`
-}
-
+//Storage - структура in-memory хранилища.
 type Storage struct {
-	Counter        int
-	FullURLKeyMap  map[string]ShortURL
-	ShortURLKeyMap map[string]FullURL
-	FileRecover    *FileRecover
+	Data        map[string]URL
+	FileRecover *FileRecover
 	sync.Mutex
 }
 
-func NewStorage(c *config.Config) *Storage {
+//NewStorage - функция-конструктор in-memory хранилища.
+func NewStorage(c *config.Config) Storager {
 	s := &Storage{
-		Counter:        0,
-		FullURLKeyMap:  make(map[string]ShortURL),
-		ShortURLKeyMap: make(map[string]FullURL),
+		Data: make(map[string]URL),
 	}
 
+	//Проверяем задан ли FILE_STORAGE_PATH,если да,то восстанавливаем данные оттуда.
 	err := s.LoadRecoveryStorage(c.StoragePath)
 	if err != nil {
 		log.Println(err)
@@ -47,55 +33,77 @@ func NewStorage(c *config.Config) *Storage {
 	return s
 }
 
-func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error) {
-	s.Lock()
-	defer s.Unlock()
-	if val, ok := s.FullURLKeyMap[fullURL]; ok {
-		return val.Short, nil
-	}
-	return "", errors.New("wrong URL")
-}
-
-func (s *Storage) GetFullURL(_ context.Context, shortURL string) (string, error) {
-	s.Lock()
-	defer s.Unlock()
-	if val, ok := s.ShortURLKeyMap[shortURL]; ok {
-		return val.Full, nil
-	}
-	return "", errors.New("wrong URL")
-}
-
-func (s *Storage) InsertURL(ctx context.Context, fullURL string) (string, error) {
-	if fullURL == "" || fullURL == " " {
-		return "", errors.New("ErrNoNilInsert")
-	}
-	short, err := s.GetShortURL(ctx, fullURL)
-	if err == nil {
-		return short, nil
-	}
-	s.Lock()
-	defer s.Unlock()
-	fURL := FullURL{Full: fullURL}
-	sURL := ShortURL{Short: strconv.Itoa(s.Counter)}
-	s.FullURLKeyMap[fullURL] = sURL
-	s.ShortURLKeyMap[sURL.Short] = fURL
-	s.Counter++
-	var URLItem = URL{
-		Full:  fURL,
-		Short: sURL,
-	}
-	if s.FileRecover != nil {
-		err = s.FileRecover.Writer.Write(&URLItem)
+//MiddlewareInsert - метод-помощник, генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
+func (s *Storage) MiddlewareInsert(fURL string, userID string) (string, error) {
+	//Генерируем hash.
+	hasher := md5.Sum([]byte(fURL + userID))
+	hash := hex.EncodeToString(hasher[:len(hasher)/5])
+	//Проверяем есть ли в хранилище такой url.
+	okHash, err := s.GetShortURL(fURL)
+	//Если нет,то вставляем новые данные.
+	if err != nil {
+		err = s.InsertURL(fURL, userID, hash)
 		if err != nil {
 			return "", err
 		}
+		//Возвращаем сгенерированный hash.
+		return hash, nil
 	}
-	return sURL.Short, nil
+	//Если есть , возвращаем hash.
+	return okHash, nil
+}
+
+//GetShortURL - метод-помощник,возвращает hash url если полный url есть в хранилище.
+func (s *Storage) GetShortURL(fullURL string) (string, error) {
+	s.Lock()
+	defer s.Unlock()
+	for hash, value := range s.Data {
+		if value.FURL == fullURL {
+			return hash, nil
+		}
+	}
+	return "", errors.New("ErrNotFoundURL")
+}
+
+//GetFullURL - возвращает полный url по hash сокращенного.
+func (s *Storage) GetFullURL(shortURL string) (string, error) {
+	s.Lock()
+	defer s.Unlock()
+	if val, ok := s.Data[shortURL]; ok {
+		return val.FURL, nil
+	}
+	return "", errors.New("ErrNotFoundURL")
+}
+
+//InsertURL - метод,заполняющий хранилище данными(полный url, id пользователя).
+func (s *Storage) InsertURL(fullURL string, userid string, hash string) error {
+	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
+		return errors.New("ErrNoEmptyInsert")
+	}
+	s.Lock()
+	defer s.Unlock()
+	s.Data[hash] = URL{
+		UserID: userid,
+		FURL:   fullURL,
+	}
+	var URLItem = NodeURL{
+		Hash:   hash,
+		FURL:   fullURL,
+		UserID: userid,
+	}
+	//Если FILE_STORAGE_PATH выставлен,то записывает данные туда.
+	if s.FileRecover != nil {
+		err := s.FileRecover.Writer.Write(&URLItem)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Storage) LoadRecoveryStorage(str string) error {
 	if str == "" {
-		return errors.New(" err FILE_STORAGE_PATH is nil ")
+		return errors.New("err FILE_STORAGE_PATH is nil ")
 	}
 	s.Lock()
 	defer s.Unlock()
@@ -105,16 +113,38 @@ func (s *Storage) LoadRecoveryStorage(str string) error {
 	}
 	s.FileRecover = fileRecover
 	for {
-		rURL, err := s.FileRecover.Reader.Read()
+		node, err := s.FileRecover.Reader.Read()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
 			return err
 		}
-		s.FullURLKeyMap[rURL.Full.Full] = rURL.Short
-		s.ShortURLKeyMap[rURL.Short.Short] = rURL.Full
-		s.Counter++
+		s.Data[node.Hash] = URL{
+			UserID: node.UserID,
+			FURL:   node.FURL,
+		}
 	}
 	return nil
+}
+
+func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	result := make([]SlicedURL, 0)
+
+	for hash, url := range s.Data {
+		if url.UserID == userid {
+			result = append(result, SlicedURL{
+				Short: hash,
+				Full:  url.FURL,
+			})
+		}
+	}
+	if len(result) == 0 {
+		return nil, errors.New("ErrNotExistUserURLs")
+	} else {
+		return result, nil
+	}
 }

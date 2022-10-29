@@ -43,10 +43,10 @@ func NewWriter(str string) (*Writer, error) {
 	}, nil
 }
 
-func (w *Writer) Write(URL *URL) error {
+func (w *Writer) Write(node *NodeURL) error {
 	w.Lock()
 	defer w.Unlock()
-	return w.encoder.Encode(&URL)
+	return w.encoder.Encode(&node)
 }
 
 func (w *Writer) Close() error {
@@ -70,14 +70,14 @@ func NewReader(str string) (*Reader, error) {
 	}, nil
 }
 
-func (r *Reader) Read() (*URL, error) {
+func (r *Reader) Read() (*NodeURL, error) {
 	r.Lock()
 	defer r.Unlock()
-	rURL := &URL{}
-	if err := r.decoder.Decode(&rURL); err != nil {
+	node := &NodeURL{}
+	if err := r.decoder.Decode(&node); err != nil {
 		return nil, err
 	}
-	return rURL, nil
+	return node, nil
 }
 
 func (r *Reader) Close() error {

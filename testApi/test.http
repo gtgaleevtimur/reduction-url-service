@@ -37,7 +37,7 @@ http://localhost:8080/thirdurlposting
 ###
 
 
-GET  http://localhost:8080/1 HTTP/1.1
+GET  http://localhost:8080/46548a HTTP/1.1
 @no-redirect
 
 # 200 (OK)
@@ -45,7 +45,7 @@ GET  http://localhost:8080/1 HTTP/1.1
 
 ###
 
-GET  http://localhost:8080/0 HTTP/1.1
+GET  http://localhost:8080/46548a HTTP/1.1
 
 # 200 (OK)
 # 404 (Not Found)
