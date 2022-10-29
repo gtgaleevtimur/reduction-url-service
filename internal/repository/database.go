@@ -3,6 +3,8 @@ package repository
 import (
 	"database/sql"
 
+	_ "github.com/jackc/pgx/stdlib"
+
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
