@@ -215,8 +215,8 @@ func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	in, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -227,7 +227,7 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var urls []repository.FullBatch
-	if err = json.Unmarshal(in, &urls); err != nil {
+	if err = json.Unmarshal(body, &urls); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -239,7 +239,7 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		result = append(result, repository.ShortBatch{
-			Short: short,
+			Short: h.Conf.ExpShortURL(short),
 			CorID: urls[i].CorID,
 		})
 	}
