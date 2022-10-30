@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -126,18 +125,27 @@ func (h ServerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	statusCode := http.StatusOK
 	var full repository.FullURL
 	err = json.Unmarshal(reqBody, &full)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var sURL repository.ShortURL
-	sURL.Short, err = h.Storage.GetShortURL(full.Full)
+	userid, err := r.Cookie("shortener")
 	if err != nil {
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
-		h.insertHelper(w, r)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	var sURL repository.ShortURL
+	sURL.Short, err = h.Storage.MiddlewareInsert(full.Full, userid.Value)
+	if err != nil {
+		if errors.Is(err, repository.ErrConflictInsert) {
+			statusCode = http.StatusConflict
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
@@ -145,7 +153,7 @@ func (h ServerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write(respBody)
 }
