@@ -4,7 +4,6 @@ type Storager interface {
 	GetShortURL(fullURL string) (string, error)
 	GetFullURL(shortURL string) (string, error)
 	InsertURL(fullURL string, userid string, hash string) error
-	LoadRecoveryStorage(str string) error
 	MiddlewareInsert(fURL string, userID string) (string, error)
 	GetAllUserURLs(userid string) ([]SlicedURL, error)
 	Ping() error
