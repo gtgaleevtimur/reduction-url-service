@@ -157,50 +157,6 @@ func (h ServerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
 	w.Write(respBody)
 }
 
-/*
-func (h ServerHandler) insertHelper(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	reqBody, err := ioutil.ReadAll(r.Body)
-	defer r.Body.Close()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	userID, err := r.Cookie("shortener")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	var full repository.FullURL
-	err = json.Unmarshal(reqBody, &full)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	statusCode := http.StatusCreated
-	var sURL repository.ShortURL
-	fromInsert, err := h.Storage.MiddlewareInsert(full.Full, userID.Value)
-	if err != nil {
-		if errors.Is(err, repository.ErrConflictInsert) {
-			statusCode = http.StatusConflict
-		} else {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-	sURL.Short = fromInsert
-	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
-	respBody, err := json.Marshal(sURL)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(statusCode)
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write(respBody)
-}
-*/
-
 func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
 	userid, err := r.Cookie("shortener")
 	if err != nil {
