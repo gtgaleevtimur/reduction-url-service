@@ -38,8 +38,10 @@ func NewRouter(s repository.Storager, c *config.Config) chi.Router {
 		router.Get("/ping", controller.Ping)
 
 		router.Route("/api", func(router chi.Router) {
-			router.Post("/shorten", controller.GetShortURL)
 			router.Get("/user/urls", controller.GetAllUserURLs)
+			router.Post("/shorten", controller.GetShortURL)
+			router.Post("/shorten/batch", controller.PostBatch)
+
 		})
 	})
 
@@ -211,6 +213,46 @@ func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
+	in, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	userid, err := r.Cookie("shortener")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var urls []repository.FullBatch
+	if err = json.Unmarshal(in, &urls); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var result []repository.ShortBatch
+	for i := range urls {
+		short, err := h.Storage.MiddlewareInsert(urls[i].Full, userid.Value)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		result = append(result, repository.ShortBatch{
+			Short: short,
+			CorID: urls[i].CorID,
+		})
+	}
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(resultJSON)
+}
+
 func NotFound() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)

@@ -32,3 +32,13 @@ type SlicedURL struct {
 	Short string `json:"short_url" db:"hash"`
 	Full  string `json:"original_url" db:"url"`
 }
+
+type FullBatch struct {
+	CorID string `json:"correlation_id"`
+	Full  string `json:"original_url"`
+}
+
+type ShortBatch struct {
+	CorID string `json:"correlation_id"`
+	Short string `json:"short_url"`
+}
