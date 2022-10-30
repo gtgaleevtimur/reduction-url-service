@@ -215,15 +215,15 @@ func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
-	in, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	userid, err := r.Cookie("shortener")
+	in, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	userid, err := r.Cookie("shortener")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	var urls []repository.FullBatch
