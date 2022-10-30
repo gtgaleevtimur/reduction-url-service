@@ -29,6 +29,6 @@ type ShortURL struct {
 }
 
 type SlicedURL struct {
-	Short string `json:"short_url"`
-	Full  string `json:"original_url"`
+	Short string `json:"short_url" db:"hash"`
+	Full  string `json:"original_url" db:"url"`
 }

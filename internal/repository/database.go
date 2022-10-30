@@ -2,21 +2,21 @@ package repository
 
 import (
 	"crypto/md5"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 
 	_ "github.com/jackc/pgx/stdlib"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
 type Database struct {
-	DB *sql.DB
+	DB *sqlx.DB
 }
 
 func NewDatabaseDSN(conf *config.Config) (Storager, error) {
-	db, err := sql.Open("pgx", conf.DatabaseDSN)
+	db, err := sqlx.Open("pgx", conf.DatabaseDSN)
 	if err != nil {
 		return nil, err
 	}
@@ -103,25 +103,21 @@ func (d *Database) MiddlewareInsert(fURL string, userID string) (string, error) 
 }
 
 func (d *Database) GetAllUserURLs(userid string) ([]SlicedURL, error) {
-	var hash string
-	var fullURL string
+	var sliced SlicedURL
 	result := make([]SlicedURL, 0)
 
 	str := `SELECT "hash", "url" FROM "shortener" WHERE "userid" = $1`
-	rows, err := d.DB.Query(str, userid)
+	rows, err := d.DB.Queryx(str, userid)
 	if err != nil || rows.Err() != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&hash, &fullURL)
+		err = rows.StructScan(&sliced)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, SlicedURL{
-			Short: hash,
-			Full:  fullURL,
-		})
+		result = append(result, sliced)
 	}
 	return result, nil
 }
