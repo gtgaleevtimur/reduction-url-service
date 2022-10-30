@@ -109,7 +109,7 @@ func (d *Database) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 
 	str := `SELECT "hash", "url" FROM "shortener" WHERE "userid" = $1`
 	rows, err := d.DB.Query(str, userid)
-	if err != nil {
+	if err != nil || rows.Err() != nil {
 		return nil, err
 	}
 	defer rows.Close()
