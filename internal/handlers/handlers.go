@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -119,7 +118,6 @@ func (h ServerHandler) GetFullURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ServerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	reqBody, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -132,12 +130,21 @@ func (h ServerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var sURL repository.ShortURL
-	sURL.Short, err = h.Storage.GetShortURL(full.Full)
+	userid, err := r.Cookie("shortener")
 	if err != nil {
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
-		h.insertHelper(w, r)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	statusCode := http.StatusCreated
+	var sURL repository.ShortURL
+	sURL.Short, err = h.Storage.MiddlewareInsert(full.Full, userid.Value)
+	if err != nil {
+		if errors.Is(err, repository.ErrConflictInsert) {
+			statusCode = http.StatusConflict
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
 	respBody, err := json.Marshal(sURL)
@@ -145,11 +152,12 @@ func (h ServerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(respBody)
 }
 
+/*
 func (h ServerHandler) insertHelper(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	reqBody, err := ioutil.ReadAll(r.Body)
@@ -191,6 +199,7 @@ func (h ServerHandler) insertHelper(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write(respBody)
 }
+*/
 
 func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
 	userid, err := r.Cookie("shortener")
