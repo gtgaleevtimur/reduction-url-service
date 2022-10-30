@@ -20,16 +20,17 @@ func NewDatabaseDSN(conf *config.Config) (Storager, error) {
 	err = db.Ping()
 	if err != nil {
 		return nil, err
+	} else {
+		table := `CREATE TABLE IF NOT EXIST "shortener" ("hash" TEXT UNIQUE PRIMARY KEY NOT NULL,"url" TEXT UNIQUE NOT NULL,"userid" TEXT NOT NULL)`
+		_, err = db.Exec(table)
+		if err != nil {
+			return nil, err
+		}
 	}
-	table := `CREATE TABLE IF NOT EXIST "shortener" ("hash" TEXT UNIQUE PRIMARY KEY NOT NULL,"url" TEXT UNIQUE NOT NULL,"userid" TEXT NOT NULL)`
-	_, err = db.Exec(table)
-	if err != nil {
-		return nil, err
-	}
-	st := &Database{
+	s := &Database{
 		DB: db,
 	}
-	return st, nil
+	return s, nil
 }
 
 func (d *Database) GetShortURL(fullURL string) (string, error) {
