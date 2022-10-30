@@ -21,6 +21,11 @@ func NewDatabaseDSN(conf *config.Config) (Storager, error) {
 	if err != nil {
 		return nil, err
 	}
+	table := `CREATE TABLE IF NOT EXIST "shortener" ("hash" TEXT UNIQUE PRIMARY KEY NOT NULL,"url" TEXT UNIQUE NOT NULL,"userid" TEXT NOT NULL)`
+	_, err = db.Exec(table)
+	if err != nil {
+		return nil, err
+	}
 	st := &Database{
 		DB: db,
 	}
