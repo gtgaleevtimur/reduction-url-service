@@ -92,8 +92,8 @@ func (h ServerHandler) CreateShortURL(w http.ResponseWriter, r *http.Request) {
 	//Создаем сокращенный url.
 	exShortURL := h.Conf.ExpShortURL(shortURL)
 	//Формируем ответ.
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(statusCode)
-	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(exShortURL))
 }
 
@@ -152,8 +152,8 @@ func (h ServerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	w.Write(respBody)
 }
 
