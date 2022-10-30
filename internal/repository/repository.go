@@ -50,7 +50,7 @@ func (s *Storage) MiddlewareInsert(fURL string, userID string) (string, error) {
 		return hash, nil
 	}
 	//Если есть , возвращаем hash.
-	return okHash, nil
+	return okHash, ErrConflictInsert
 }
 
 //GetShortURL - метод-помощник,возвращает hash url если полный url есть в хранилище.

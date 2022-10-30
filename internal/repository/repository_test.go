@@ -114,7 +114,7 @@ func TestStorage_GetFullURL(t *testing.T) {
 			db := NewStorage(cnf)
 			if !tt.wantErr {
 				res, err := db.MiddlewareInsert(tt.fullURL, tt.userID)
-				require.ErrorIs(t, err, err)
+				require.NoError(t, err)
 				got, err := db.GetFullURL(res)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.want, got)
@@ -157,7 +157,7 @@ func TestStorage_GetShortURL(t *testing.T) {
 			db := NewStorage(cnf)
 			if !tt.wantErr {
 				res, err := db.MiddlewareInsert(tt.fullURL, tt.userID)
-				require.ErrorIs(t, err, err)
+				require.NoError(t, err)
 				assert.NotNil(t, res)
 				got, err := db.GetShortURL(tt.fullURL)
 				assert.NoError(t, err)

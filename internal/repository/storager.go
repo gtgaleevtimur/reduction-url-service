@@ -1,5 +1,7 @@
 package repository
 
+import "errors"
+
 type Storager interface {
 	GetShortURL(fullURL string) (string, error)
 	GetFullURL(shortURL string) (string, error)
@@ -42,3 +44,5 @@ type ShortBatch struct {
 	CorID string `json:"correlation_id"`
 	Short string `json:"short_url"`
 }
+
+var ErrConflictInsert error = errors.New("URL is exist")

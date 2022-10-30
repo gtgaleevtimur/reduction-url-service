@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -63,7 +64,7 @@ func newServerHandler(s repository.Storager, c *config.Config) *ServerHandler {
 	return &ServerHandler{Storage: s, Conf: c}
 }
 
-//CreateShortURL - обработчик эндпоинта POST / принимает в теле запроса строку URL для сокращения
+//CreateShortURL - обработчик эндпоинта POST / принимает в теле запроса текстовую строку URL для сокращения
 //и возвращает ответ с кодом 201 и сокращённым URL в виде текстовой строки в теле.
 func (h ServerHandler) CreateShortURL(w http.ResponseWriter, r *http.Request) {
 	//Читаем тело и проверяем ошибку.
@@ -78,16 +79,21 @@ func (h ServerHandler) CreateShortURL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	statusCode := http.StatusCreated
 	//Передаем значения для обработки в хранилище/получаем hash для сокращенного url.
 	shortURL, err := h.Storage.MiddlewareInsert(string(textURL), userID.Value)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if errors.Is(err, repository.ErrConflictInsert) {
+			statusCode = http.StatusConflict
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	//Создаем сокращенный url.
 	exShortURL := h.Conf.ExpShortURL(shortURL)
 	//Формируем ответ.
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(exShortURL))
 }
@@ -163,11 +169,16 @@ func (h ServerHandler) insertHelper(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	statusCode := http.StatusCreated
 	var sURL repository.ShortURL
 	fromInsert, err := h.Storage.MiddlewareInsert(full.Full, userID.Value)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if errors.Is(err, repository.ErrConflictInsert) {
+			statusCode = http.StatusConflict
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	sURL.Short = fromInsert
 	sURL.Short = h.Conf.ExpShortURL(sURL.Short)
@@ -176,7 +187,7 @@ func (h ServerHandler) insertHelper(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write(respBody)
 }
@@ -235,8 +246,16 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 	for i := range urls {
 		short, err := h.Storage.MiddlewareInsert(urls[i].Full, userid.Value)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			if errors.Is(err, repository.ErrConflictInsert) {
+				result = append(result, repository.ShortBatch{
+					Short: h.Conf.ExpShortURL(short),
+					CorID: urls[i].CorID,
+				})
+				continue
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 		result = append(result, repository.ShortBatch{
 			Short: h.Conf.ExpShortURL(short),

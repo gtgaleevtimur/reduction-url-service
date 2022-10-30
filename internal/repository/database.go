@@ -99,7 +99,7 @@ func (d *Database) MiddlewareInsert(fURL string, userID string) (string, error) 
 		return hash, nil
 	}
 	//Если есть , возвращаем hash.
-	return okHash, nil
+	return okHash, ErrConflictInsert
 }
 
 func (d *Database) GetAllUserURLs(userid string) ([]SlicedURL, error) {
