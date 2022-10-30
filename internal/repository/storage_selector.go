@@ -8,7 +8,6 @@ func NewDataSource(conf *config.Config) (result Storager, err error) {
 	if conf.DatabaseDSN != "" {
 		return NewDatabaseDSN(conf)
 	} else {
-		NewStorage(conf)
 		return NewStorage(conf), nil
 	}
 }

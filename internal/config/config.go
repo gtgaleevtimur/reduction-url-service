@@ -25,6 +25,7 @@ func NewConfig(options ...Option) *Config {
 		ServerAddress: HostAddr + ":" + HostPort,
 		BaseURL:       HostAddr + ":" + HostPort,
 		StoragePath:   "",
+		DatabaseDSN:   "",
 	}
 
 	for _, opt := range options {
