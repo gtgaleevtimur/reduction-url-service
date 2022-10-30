@@ -197,7 +197,7 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 		var short repository.ShortURL
 		err = json.Unmarshal(body, &short)
 		require.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusConflict, resp.StatusCode)
 		assert.Equal(t, "http://localhost:8080/"+hash, short.Short)
 	})
 	t.Run("Negative test with another method", func(t *testing.T) {
