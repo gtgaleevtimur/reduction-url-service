@@ -18,7 +18,7 @@ type Storage struct {
 	sync.Mutex
 }
 
-//NewStorage - функция-конструктор in-memory хранилища.
+//NewStorage - функция-конструктор in-memory хранилища,возвращает интерфейс.
 func NewStorage(c *config.Config) Storager {
 	s := &Storage{
 		Data: make(map[string]URL),
@@ -34,26 +34,26 @@ func NewStorage(c *config.Config) Storager {
 }
 
 //MiddlewareInsert - метод-помощник, генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
-func (s *Storage) MiddlewareInsert(fURL string, userID string) (string, error) {
+func (s *Storage) MiddlewareInsert(fullURL string, userID string) (string, error) {
 	//Генерируем hash.
-	hasher := md5.Sum([]byte(fURL + userID))
+	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
 	//Проверяем есть ли в хранилище такой url.
-	okHash, err := s.GetShortURL(fURL)
+	okHash, err := s.GetShortURL(fullURL)
 	//Если нет,то вставляем новые данные.
 	if err != nil {
-		err = s.InsertURL(fURL, userID, hash)
+		err = s.InsertURL(fullURL, userID, hash)
 		if err != nil {
 			return "", err
 		}
 		//Возвращаем сгенерированный hash.
 		return hash, nil
 	}
-	//Если есть , возвращаем hash.
+	//Если есть , возвращаем hash и ошибку.
 	return okHash, ErrConflictInsert
 }
 
-//GetShortURL - метод-помощник,возвращает hash url если полный url есть в хранилище.
+//GetShortURL - метод, возвращающий hash сокращенного url.
 func (s *Storage) GetShortURL(fullURL string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -65,7 +65,7 @@ func (s *Storage) GetShortURL(fullURL string) (string, error) {
 	return "", errors.New("ErrNotFoundURL")
 }
 
-//GetFullURL - возвращает полный url по hash сокращенного.
+//GetFullURL - метод, возвращающий original_url по его hash.
 func (s *Storage) GetFullURL(shortURL string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -77,22 +77,27 @@ func (s *Storage) GetFullURL(shortURL string) (string, error) {
 
 //InsertURL - метод,заполняющий хранилище данными(полный url, id пользователя).
 func (s *Storage) InsertURL(fullURL string, userid string, hash string) error {
+	//Проверяем полученные данные.
 	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
 		return errors.New("ErrNoEmptyInsert")
 	}
+	//Блокируем хранилище на время операции.
 	s.Lock()
 	defer s.Unlock()
+	//Записываем данные в хранилище.
 	s.Data[hash] = URL{
 		UserID: userid,
 		FURL:   fullURL,
 	}
-	var URLItem = NodeURL{
-		Hash:   hash,
-		FURL:   fullURL,
-		UserID: userid,
-	}
-	//Если FILE_STORAGE_PATH выставлен,то записывает данные туда.
+	//Если FILE_STORAGE_PATH выставлен,то записывает данные в резервное хранилище..
 	if s.FileRecover != nil {
+		//Готовим структуру для резервного хранилища.
+		URLItem := NodeURL{
+			Hash:   hash,
+			FURL:   fullURL,
+			UserID: userid,
+		}
+		//Записываем.
 		err := s.FileRecover.Writer.Write(&URLItem)
 		if err != nil {
 			return err
@@ -101,25 +106,32 @@ func (s *Storage) InsertURL(fullURL string, userid string, hash string) error {
 	return nil
 }
 
+//LoadRecoveryStorage - метод , восстанавливающий данные из резервного хранилища при инициализации in-memory.
 func (s *Storage) LoadRecoveryStorage(str string) error {
+	//Выполняем проверку текущей конфигурации.
 	if str == "" {
 		return errors.New("err FILE_STORAGE_PATH is nil ")
 	}
+	//Блокируем хранилище на время выполнения операции.
 	s.Lock()
 	defer s.Unlock()
+	//Создаем FileRecover.
 	fileRecover, err := NewFileRecover(str)
 	if err != nil {
 		return err
 	}
 	s.FileRecover = fileRecover
 	for {
+		//Читаем построчно из резервного хранилища данные.
 		node, err := s.FileRecover.Reader.Read()
+		//Проверка ошибки.
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
 			return err
 		}
+		//Вставляем считанные данные.
 		s.Data[node.Hash] = URL{
 			UserID: node.UserID,
 			FURL:   node.FURL,
@@ -128,13 +140,16 @@ func (s *Storage) LoadRecoveryStorage(str string) error {
 	return nil
 }
 
+//GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
+	//Блокируем хранилище на время выполнения операции.
 	s.Lock()
 	defer s.Unlock()
-
+	//Инициализируем результирующий массив.
 	result := make([]SlicedURL, 0)
-
+	//Итерируемся по хранилищу
 	for hash, url := range s.Data {
+		//Если нашли совпадение userID,то добавляем в массив данные.
 		if url.UserID == userid {
 			result = append(result, SlicedURL{
 				Short: hash,
@@ -149,6 +164,7 @@ func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 	}
 }
 
+//Ping - метод заглушка для in-memory.
 func (s *Storage) Ping() error {
 	return nil
 }

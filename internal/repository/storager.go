@@ -2,6 +2,7 @@ package repository
 
 import "errors"
 
+//Storager - интерфейс хранилища.
 type Storager interface {
 	GetShortURL(fullURL string) (string, error)
 	GetFullURL(shortURL string) (string, error)
@@ -45,4 +46,5 @@ type ShortBatch struct {
 	Short string `json:"short_url"`
 }
 
+//ErrConflictInsert - ошибка,показывающая что сохраняемый URL уже есть в базе данных.
 var ErrConflictInsert error = errors.New("URL is exist")

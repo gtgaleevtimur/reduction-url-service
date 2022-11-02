@@ -6,11 +6,13 @@ import (
 	"sync"
 )
 
+//FileRecover - резервное хранилище.
 type FileRecover struct {
 	Writer *Writer
 	Reader *Reader
 }
 
+//NewFileRecover - конструктор резервного хранилища.
 func NewFileRecover(str string) (*FileRecover, error) {
 	fileReader, err := NewReader(str)
 	if err != nil {

@@ -10,9 +10,9 @@ import (
 )
 
 func Run() {
-	//конфигурация приложения через считывание флагов и переменных окружения.
+	//Конфигурация приложения через считывание флагов и переменных окружения.
 	conf := config.NewConfig(config.WithParseEnv())
-	//инициализация хранилища приложения.
+	//Инициализация хранилища приложения.
 	storage, err := repository.NewDataSource(conf)
 	if err != nil {
 		log.Println(err)
