@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"crypto/sha1"
+	"crypto/md5"
 	"encoding/hex"
 	"errors"
 	"io"
@@ -36,7 +36,7 @@ func NewStorage(c *config.Config) Storager {
 //MiddlewareInsert - метод-помощник, генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
 func (s *Storage) MiddlewareInsert(fullURL string, userID string) (string, error) {
 	//Генерируем hash.
-	hasher := sha1.Sum([]byte(fullURL + userID))
+	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
 	//Проверяем есть ли в хранилище такой url.
 	okHash, err := s.GetShortURL(fullURL)
