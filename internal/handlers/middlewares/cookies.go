@@ -11,20 +11,11 @@ import (
 )
 
 //	CookiesMiddleware - middleware, проверяющяя в запросе cookie на наличие/подлинность. Если cookie нет, то генерируем новую и вставляем в Header.
-// Алгоритм шифрования - AES.
+// Алгоритм подписи - sha.256.
 func CookiesMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//Срез байт в качестве буфера.
-		//authCookie := make([]byte, aes.BlockSize)
 		//Ключ шифрования.
 		key := []byte("AsdFrGtHyJhjErTy")
-		//Проверочное слово.
-		//nonce := []byte("cookie")
-		//Инициализация интерфейся для симметричного шифрования.
-		//aesBlock, err := aes.NewCipher(key)
-		//if err != nil {
-		//	log.Println(err)
-		//}
 		//Проверка наличия cookie в запросе.
 		if userCookie, err := r.Cookie("shortener"); err == nil {
 			//Расшифровка значения cookie в срез байт.
@@ -32,16 +23,13 @@ func CookiesMiddleware(next http.Handler) http.Handler {
 			if err != nil {
 				log.Printf("Cookie decoding: %v\n", err)
 			}
-			//Расшифровываем полученный срез байт с помощью интерфейса симметричного шифрования.z`
-			//aesBlock.Decrypt(authCookie, userCookieByte)
+			//Инициализируем алгоритм подписи HMAC.
 			h := hmac.New(sha256.New, key)
+			//Записываем в него полученое значение cookie.
 			h.Write(userCookieByte)
+			//Создаем подпись для проверки.
 			sign := h.Sum(nil)
-			//Проверяем на подлинность сравнением конца расшированного означения от длинны проверчного слова и проверчного слова.
-			//if string(authCookie[len(authCookie)-len(nonce):]) == string(nonce) {
-			//next.ServeHTTP(w, r)
-			//return
-			//}
+			//Проверяем на подлинность полученную подписанную cookie.
 			if hmac.Equal(userCookieByte, sign) {
 				next.ServeHTTP(w, r)
 				return
@@ -53,14 +41,13 @@ func CookiesMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			log.Printf("UserID generate: %v\n", err)
 		}
-		/*
-			//Шифрование userID+проверочное слово.
-			aesBlock.Encrypt(authCookie, append(userID, nonce...))
-			//Инициализация и вставка новой cookie.
-		*/
+		//Инициализируем алгоритм подписи HMAC.
 		h := hmac.New(sha256.New, key)
+		//Пишем в него сгенерированный userid.
 		h.Write(userID)
+		//Генерируем подписанную cookie.
 		cook := h.Sum(nil)
+		//Создаем cookie и передаем ее в ответ и запрос.
 		cookie := &http.Cookie{
 			Name:    "shortener",
 			Value:   hex.EncodeToString(cook),
