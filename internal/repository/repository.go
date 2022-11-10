@@ -11,14 +11,14 @@ import (
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
-//Storage - структура in-memory хранилища.
+// Storage - структура in-memory хранилища.
 type Storage struct {
 	Data        map[string]URL
 	FileRecover *FileRecover
 	sync.Mutex
 }
 
-//NewStorage - функция-конструктор in-memory хранилища,возвращает интерфейс.
+// NewStorage - функция-конструктор in-memory хранилища,возвращает интерфейс.
 func NewStorage(c *config.Config) Storager {
 	s := &Storage{
 		Data: make(map[string]URL),
@@ -33,8 +33,8 @@ func NewStorage(c *config.Config) Storager {
 	return s
 }
 
-//MiddlewareInsert - метод-помощник, генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
-func (s *Storage) MiddlewareInsert(fullURL string, userID string) (string, error) {
+// InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
+func (s *Storage) InsertURL(fullURL string, userID string) (string, error) {
 	//Генерируем hash.
 	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
@@ -42,7 +42,7 @@ func (s *Storage) MiddlewareInsert(fullURL string, userID string) (string, error
 	okHash, err := s.GetShortURL(fullURL)
 	//Если нет,то вставляем новые данные.
 	if err != nil {
-		err = s.InsertURL(fullURL, userID, hash)
+		err = s.saveData(fullURL, userID, hash)
 		if err != nil {
 			return "", err
 		}
@@ -53,7 +53,7 @@ func (s *Storage) MiddlewareInsert(fullURL string, userID string) (string, error
 	return okHash, ErrConflictInsert
 }
 
-//GetShortURL - метод, возвращающий hash сокращенного url.
+// GetShortURL - метод, возвращающий hash сокращенного url.
 func (s *Storage) GetShortURL(fullURL string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -65,7 +65,7 @@ func (s *Storage) GetShortURL(fullURL string) (string, error) {
 	return "", errors.New("ErrNotFoundURL")
 }
 
-//GetFullURL - метод, возвращающий original_url по его hash.
+// GetFullURL - метод, возвращающий original_url по его hash.
 func (s *Storage) GetFullURL(shortURL string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -75,8 +75,8 @@ func (s *Storage) GetFullURL(shortURL string) (string, error) {
 	return "", errors.New("ErrNotFoundURL")
 }
 
-//InsertURL - метод,заполняющий хранилище данными(полный url, id пользователя).
-func (s *Storage) InsertURL(fullURL string, userid string, hash string) error {
+// InsertURL - метод,заполняющий хранилище данными(полный url, id пользователя, hash).
+func (s *Storage) saveData(fullURL string, userid string, hash string) error {
 	//Проверяем полученные данные.
 	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
 		return errors.New("ErrNoEmptyInsert")
@@ -106,7 +106,7 @@ func (s *Storage) InsertURL(fullURL string, userid string, hash string) error {
 	return nil
 }
 
-//LoadRecoveryStorage - метод , восстанавливающий данные из резервного хранилища при инициализации in-memory.
+// LoadRecoveryStorage - метод , восстанавливающий данные из резервного хранилища при инициализации in-memory.
 func (s *Storage) LoadRecoveryStorage(str string) error {
 	//Выполняем проверку текущей конфигурации.
 	if str == "" {
@@ -140,7 +140,7 @@ func (s *Storage) LoadRecoveryStorage(str string) error {
 	return nil
 }
 
-//GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
+// GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 	//Блокируем хранилище на время выполнения операции.
 	s.Lock()
@@ -164,7 +164,7 @@ func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 	}
 }
 
-//Ping - метод заглушка для in-memory.
+// Ping - метод заглушка для in-memory.
 func (s *Storage) Ping() error {
 	return nil
 }

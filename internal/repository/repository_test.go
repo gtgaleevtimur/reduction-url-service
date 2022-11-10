@@ -72,11 +72,11 @@ func TestStorage_InsertURL(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
 			if !tt.wantErr {
-				err := db.InsertURL(tt.fullURL, tt.userID, tt.hash)
+				err := db.saveData(tt.fullURL, tt.userID, tt.hash)
 				require.NoError(t, err)
 			}
 			if tt.wantErr {
-				err := db.InsertURL(tt.fullURL, tt.userID, tt.hash)
+				err := db.saveData(tt.fullURL, tt.userID, tt.hash)
 				require.ErrorContains(t, err, "ErrNoEmptyInsert")
 			}
 		})
@@ -113,7 +113,7 @@ func TestStorage_GetFullURL(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
 			if !tt.wantErr {
-				res, err := db.MiddlewareInsert(tt.fullURL, tt.userID)
+				res, err := db.InsertURL(tt.fullURL, tt.userID)
 				require.NoError(t, err)
 				got, err := db.GetFullURL(res)
 				assert.NoError(t, err)
@@ -156,7 +156,7 @@ func TestStorage_GetShortURL(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
 			if !tt.wantErr {
-				res, err := db.MiddlewareInsert(tt.fullURL, tt.userID)
+				res, err := db.InsertURL(tt.fullURL, tt.userID)
 				require.NoError(t, err)
 				assert.NotNil(t, res)
 				got, err := db.GetShortURL(tt.fullURL)

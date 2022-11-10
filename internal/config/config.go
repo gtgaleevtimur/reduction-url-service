@@ -13,7 +13,7 @@ const (
 	HTTP     string = "http://"
 )
 
-//Config -структура конфигурационного файла приложения.
+// Config -структура конфигурационного файла приложения.
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS"`
 	BaseURL       string `env:"BASE_URL"`
@@ -21,7 +21,7 @@ type Config struct {
 	DatabaseDSN   string `env:"DATABASE_DSN"`
 }
 
-//NewConfig - конструктор конфигурационного файла.
+// NewConfig - конструктор конфигурационного файла.
 func NewConfig(options ...Option) *Config {
 	conf := Config{
 		ServerAddress: HostAddr + ":" + HostPort,
@@ -37,10 +37,10 @@ func NewConfig(options ...Option) *Config {
 	return &conf
 }
 
-//Option - функция применяемая к Config для его заполнения.
+// Option - функция применяемая к Config для его заполнения.
 type Option func(*Config)
 
-//WithParseEnv - парсит из окружения/флагов, изменяет Config.
+// WithParseEnv - парсит из окружения/флагов, изменяет Config.
 func WithParseEnv() Option {
 	return func(c *Config) {
 		env.Parse(c)
@@ -48,7 +48,7 @@ func WithParseEnv() Option {
 	}
 }
 
-//ParseFlags - парсит флаги.
+// ParseFlags - парсит флаги.
 func (c *Config) ParseFlags() {
 	flag.StringVar(&c.ServerAddress, "a", c.ServerAddress, "SERVER_ADDRESS")
 	flag.StringVar(&c.BaseURL, "b", c.BaseURL, "BASE_URL")
@@ -57,7 +57,7 @@ func (c *Config) ParseFlags() {
 	flag.Parse()
 }
 
-//ExpShortURL - хэлпер, формирующий сокращенный URL (http+hostAddr+hostport+hash).
+// ExpShortURL - хэлпер, формирующий сокращенный URL (http+hostAddr+hostport+hash).
 func (c *Config) ExpShortURL(shortURL string) string {
 	if strings.HasPrefix(c.BaseURL, HTTP) {
 		return c.BaseURL + "/" + shortURL

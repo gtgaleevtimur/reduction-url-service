@@ -1,4 +1,4 @@
-package middlewares
+package middleware
 
 import (
 	"crypto/hmac"
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//	CookiesMiddleware - middleware, проверяющяя в запросе cookie на наличие/подлинность. Если cookie нет, то генерируем новую и вставляем в Header.
+// CookiesMiddleware - middleware, проверяющяя в запросе cookie на наличие/подлинность. Если cookie нет, то генерируем новую и вставляем в Header.
 // Алгоритм подписи - sha.256.
 func CookiesMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,7 @@ func CookiesMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-//generateRandom - генератор случайных байт длинной size.
+// generateRandom - генератор случайных байт длинной size.
 func generateRandom(size int) ([]byte, error) {
 	b := make([]byte, size)
 	_, err := rand.Read(b)

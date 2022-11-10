@@ -1,11 +1,11 @@
-package middlewares
+package middleware
 
 import (
 	"compress/gzip"
 	"net/http"
 )
 
-//	Decompress - middleware, распаковывающая GZIP запросы.
+// Decompress - middleware, распаковывающая GZIP запросы.
 func Decompress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//Если запрос сжат gzip,то заменяем r.Reader на gzip.Reader.

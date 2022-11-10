@@ -11,38 +11,51 @@ import (
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
 
-//Database - структура базы данных SQL.
+// Database - структура базы данных SQL.
 type Database struct {
 	DB *sql.DB
 }
 
-//NewDatabaseDSN - конструктор базы данных на основе SQL,возвращает интерфейс.
+// NewDatabaseDSN - конструктор базы данных на основе SQL,возвращает интерфейс.
 func NewDatabaseDSN(conf *config.Config) (Storager, error) {
-	//Инициализируем драйвер SQL.
-	db, err := sql.Open("pgx", conf.DatabaseDSN)
+	s := &Database{}
+	err := s.Connect(conf)
 	if err != nil {
 		return nil, err
 	}
-	//Проверка Ping.
-	err = db.Ping()
+	err = s.Bootstrap()
 	if err != nil {
 		return nil, err
 	}
-	//Подготавливаем SQL запрос на создание таблицы,если ее нет.
-	table := `CREATE TABLE IF NOT EXISTS "shortener" ("hash" TEXT UNIQUE PRIMARY KEY NOT NULL,"url" TEXT UNIQUE NOT NULL,"userid" TEXT NOT NULL)`
-	//Выполняем SQL запрос.
-	_, err = db.Exec(table)
-	if err != nil {
-		return nil, err
-	}
-	//Возвращаем интерфейс.
-	s := &Database{
-		DB: db,
-	}
+
 	return s, nil
 }
 
-//GetShortURL - метод, возвращающий hash сокращенного url.
+func (d *Database) Bootstrap() (err error) {
+	//Подготавливаем SQL запрос на создание таблицы,если ее нет.
+	table := `CREATE TABLE IF NOT EXISTS "shortener" ("hash" TEXT UNIQUE PRIMARY KEY NOT NULL,"url" TEXT UNIQUE NOT NULL,"userid" TEXT NOT NULL)`
+	//Выполняем SQL запрос.
+	_, err = d.DB.Exec(table)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Connect - метод выполняет соединение с базой данных.
+func (d *Database) Connect(conf *config.Config) (err error) {
+	d.DB, err = sql.Open("pgx", conf.DatabaseDSN)
+	if err != nil {
+		return err
+	}
+	err = d.DB.Ping()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetShortURL - метод, возвращающий hash сокращенного url.
 func (d *Database) GetShortURL(fullURL string) (string, error) {
 	var hash string
 	//Готовим SQL запрос и выполняем.
@@ -55,7 +68,7 @@ func (d *Database) GetShortURL(fullURL string) (string, error) {
 	return hash, nil
 }
 
-//GetFullURL - метод, возвращающий original_url по его hash.
+// GetFullURL - метод, возвращающий original_url по его hash.
 func (d *Database) GetFullURL(hash string) (string, error) {
 	var fullURL string
 	//Готовим SQL запрос и выполняем.
@@ -68,8 +81,8 @@ func (d *Database) GetFullURL(hash string) (string, error) {
 	return fullURL, nil
 }
 
-//InsertURL - метод, который сохраняет original_url,user_id и hash в базу данных.
-func (d *Database) InsertURL(fullURL string, userid string, hash string) error {
+// InsertURL - метод, который сохраняет original_url,user_id и hash в базу данных.
+func (d *Database) saveData(fullURL string, userid string, hash string) error {
 	//Проверяем полученные данные.
 	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
 		return errors.New("ErrNoEmptyInsert")
@@ -100,8 +113,8 @@ func (d *Database) InsertURL(fullURL string, userid string, hash string) error {
 	return nil
 }
 
-//MiddlewareInsert - метод-помощник, генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
-func (d *Database) MiddlewareInsert(fullURL string, userID string) (string, error) {
+// InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
+func (d *Database) InsertURL(fullURL string, userID string) (string, error) {
 	//Генерируем hash.
 	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
@@ -109,7 +122,7 @@ func (d *Database) MiddlewareInsert(fullURL string, userID string) (string, erro
 	okHash, err := d.GetShortURL(fullURL)
 	//Если нет,то вставляем новые данные.
 	if err != nil {
-		err = d.InsertURL(fullURL, userID, hash)
+		err = d.saveData(fullURL, userID, hash)
 		if err != nil {
 			return "", err
 		}
@@ -120,7 +133,7 @@ func (d *Database) MiddlewareInsert(fullURL string, userID string) (string, erro
 	return okHash, ErrConflictInsert
 }
 
-//GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
+// GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (d *Database) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 	//Объявляем переменные и массив с результатом.
 	var hash string
@@ -150,7 +163,7 @@ func (d *Database) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 	return result, nil
 }
 
-//Ping - возвращает ответ от БД Ping.
+// Ping - возвращает ответ от БД Ping.
 func (d *Database) Ping() error {
 	return d.DB.Ping()
 }

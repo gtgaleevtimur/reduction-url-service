@@ -1,13 +1,15 @@
 package repository
 
-import "errors"
+import (
+	"errors"
+)
 
-//Storager - интерфейс хранилища.
+// Storager - интерфейс хранилища.
 type Storager interface {
 	GetShortURL(fullURL string) (string, error)
 	GetFullURL(shortURL string) (string, error)
-	InsertURL(fullURL string, userid string, hash string) error
-	MiddlewareInsert(fURL string, userID string) (string, error)
+	saveData(fullURL string, userid string, hash string) error
+	InsertURL(fURL string, userID string) (string, error)
 	GetAllUserURLs(userid string) ([]SlicedURL, error)
 	Ping() error
 }

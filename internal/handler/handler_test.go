@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"bytes"
@@ -38,9 +38,9 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
-		hash, err := controller.MiddlewareInsert("http://test.test/test", "sadASdQeAWDwdAs")
+		hash, err := controller.InsertURL("http://test.test/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
-		require.NotEmpty(t, hash)
+		assert.NotEmpty(t, hash)
 		ts := httptest.NewServer(r)
 		defer ts.Close()
 		req, err := http.NewRequest(http.MethodGet, ts.URL+"/"+hash, nil)
@@ -62,7 +62,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
-		hash, err := controller.MiddlewareInsert("http://test.test/test", "sadASdQeAWDwdAs")
+		hash, err := controller.InsertURL("http://test.test/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
 		ts := httptest.NewServer(r)
 		defer ts.Close()
@@ -183,10 +183,10 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 		b, err := json.Marshal(repository.FullURL{
 			Full: "http://www.test.net/test"})
 		require.NoError(t, err)
-		require.NotNil(t, b)
-		hash, err := controller.MiddlewareInsert("http://www.test.net/test", "sadASdQeAWDwdAs")
+		assert.NotNil(t, b)
+		hash, err := controller.InsertURL("http://www.test.net/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
-		require.NotNil(t, hash)
+		assert.NotNil(t, hash)
 		req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", bytes.NewBuffer(b))
 		require.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
@@ -209,16 +209,16 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 		b, err := json.Marshal(repository.FullURL{
 			Full: "http://www.test.net/test"})
 		require.NoError(t, err)
-		require.NotNil(t, b)
-		hash, err := controller.MiddlewareInsert("http://www.test.net/test", "sadASdQeAWDwdAs")
+		assert.NotNil(t, b)
+		hash, err := controller.InsertURL("http://www.test.net/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
-		require.NotNil(t, hash)
+		assert.NotNil(t, hash)
 		req, err := http.NewRequest(http.MethodPatch, ts.URL+"/api/shorten", bytes.NewBuffer(b))
 		require.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 	t.Run("Negative test with nil body", func(t *testing.T) {
 		cnf := config.NewConfig()
@@ -229,15 +229,15 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 		b, err := json.Marshal(repository.FullURL{
 			Full: ""})
 		require.NoError(t, err)
-		require.NotNil(t, b)
-		hash, err := controller.MiddlewareInsert("http://www.test.net/test", "sadASdQeAWDwdAs")
+		assert.NotNil(t, b)
+		hash, err := controller.InsertURL("http://www.test.net/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
-		require.NotNil(t, hash)
+		assert.NotNil(t, hash)
 		req, err := http.NewRequest(http.MethodPatch, ts.URL+"/api/shorten", bytes.NewBuffer(b))
 		require.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 }
