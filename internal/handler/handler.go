@@ -79,7 +79,7 @@ func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	}
 	statusCode := http.StatusCreated
 	//Передаем полученные значения для обработки в хранилище/получаем hash сокращенного url.
-	hash, err := h.Storage.InsertURL(string(textURL), userID.Value)
+	hash, err := h.Storage.InsertURL(r.Context(), string(textURL), userID.Value)
 	if err != nil {
 		//Проверяем ошибку на соответсвие ситуации,когда вносимый URL уже в базе данных.
 		if errors.Is(err, repository.ErrConflictInsert) {
@@ -107,7 +107,7 @@ func (h ServerHandler) FullURLHashBy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Запрашиваем оригинальный URL из базы данных.
-	fullURL, err := h.Storage.GetFullURL(shortURL)
+	fullURL, err := h.Storage.GetFullURL(r.Context(), shortURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -148,7 +148,7 @@ func (h ServerHandler) ShortURLJSONBy(w http.ResponseWriter, r *http.Request) {
 	var sURL repository.ShortURL
 	//Передаем данные для сохранения/проверки на сокхранение URL методу базы данных,
 	//которая возвращает хэш сохраненного URL.
-	sURL.Short, err = h.Storage.InsertURL(full.Full, userid.Value)
+	sURL.Short, err = h.Storage.InsertURL(r.Context(), full.Full, userid.Value)
 	if err != nil {
 		//Проверяем ошибку на соответсвие ситуации,когда вносимый URL уже в базе данных.
 		if errors.Is(err, repository.ErrConflictInsert) {
@@ -182,7 +182,7 @@ func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Готовим массив с hash сохраненных URL пользвателя.
-	urls, err := h.Storage.GetAllUserURLs(userid.Value)
+	urls, err := h.Storage.GetAllUserURLs(r.Context(), userid.Value)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNoContent)
 		return
@@ -205,7 +205,7 @@ func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
 
 // Ping - обработчик эндпоинта GET /ping , отражает доступность базы данных.
 func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
-	err := h.Storage.Ping()
+	err := h.Storage.Ping(r.Context())
 	statusCode := http.StatusOK
 	if err != nil {
 		statusCode = http.StatusInternalServerError
@@ -239,7 +239,7 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 	var result []repository.ShortBatch
 	//Итерируемся по массиву с полученными данными и сохраняем в базу данных.
 	for i := range urls {
-		short, err := h.Storage.InsertURL(urls[i].Full, userid.Value)
+		short, err := h.Storage.InsertURL(r.Context(), urls[i].Full, userid.Value)
 		if err != nil {
 			if errors.Is(err, repository.ErrConflictInsert) {
 				//Заполняем массив с ответом в случае соответсвия ошибки.

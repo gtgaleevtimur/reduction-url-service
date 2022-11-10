@@ -1,15 +1,11 @@
 package app
 
 import (
-	"context"
-	"log"
-	"net"
-	"net/http"
-	"time"
-
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/handler"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
+	"log"
+	"net/http"
 )
 
 func Run() {
@@ -24,11 +20,6 @@ func Run() {
 	server := &http.Server{
 		Handler: handler.NewRouter(storage, conf),
 		Addr:    conf.ServerAddress,
-		BaseContext: func(listener net.Listener) context.Context {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-			defer cancel()
-			return ctx
-		},
 	}
 	log.Fatal(server.ListenAndServe())
 }

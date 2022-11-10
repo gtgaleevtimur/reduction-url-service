@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -34,15 +35,15 @@ func NewStorage(c *config.Config) Storager {
 }
 
 // InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
-func (s *Storage) InsertURL(fullURL string, userID string) (string, error) {
+func (s *Storage) InsertURL(ctx context.Context, fullURL string, userID string) (string, error) {
 	//Генерируем hash.
 	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
 	//Проверяем есть ли в хранилище такой url.
-	okHash, err := s.GetShortURL(fullURL)
+	okHash, err := s.GetShortURL(ctx, fullURL)
 	//Если нет,то вставляем новые данные.
 	if err != nil {
-		err = s.saveData(fullURL, userID, hash)
+		err = s.saveData(ctx, fullURL, userID, hash)
 		if err != nil {
 			return "", err
 		}
@@ -54,7 +55,7 @@ func (s *Storage) InsertURL(fullURL string, userID string) (string, error) {
 }
 
 // GetShortURL - метод, возвращающий hash сокращенного url.
-func (s *Storage) GetShortURL(fullURL string) (string, error) {
+func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
 	for hash, value := range s.Data {
@@ -66,7 +67,7 @@ func (s *Storage) GetShortURL(fullURL string) (string, error) {
 }
 
 // GetFullURL - метод, возвращающий original_url по его hash.
-func (s *Storage) GetFullURL(shortURL string) (string, error) {
+func (s *Storage) GetFullURL(_ context.Context, shortURL string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
 	if val, ok := s.Data[shortURL]; ok {
@@ -76,7 +77,7 @@ func (s *Storage) GetFullURL(shortURL string) (string, error) {
 }
 
 // InsertURL - метод,заполняющий хранилище данными(полный url, id пользователя, hash).
-func (s *Storage) saveData(fullURL string, userid string, hash string) error {
+func (s *Storage) saveData(_ context.Context, fullURL string, userid string, hash string) error {
 	//Проверяем полученные данные.
 	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
 		return errors.New("ErrNoEmptyInsert")
@@ -141,7 +142,7 @@ func (s *Storage) LoadRecoveryStorage(str string) error {
 }
 
 // GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
-func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
+func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL, error) {
 	//Блокируем хранилище на время выполнения операции.
 	s.Lock()
 	defer s.Unlock()
@@ -165,6 +166,6 @@ func (s *Storage) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 }
 
 // Ping - метод заглушка для in-memory.
-func (s *Storage) Ping() error {
+func (s *Storage) Ping(_ context.Context) error {
 	return nil
 }

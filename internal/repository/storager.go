@@ -1,17 +1,18 @@
 package repository
 
 import (
+	"context"
 	"errors"
 )
 
 // Storager - интерфейс хранилища.
 type Storager interface {
-	GetShortURL(fullURL string) (string, error)
-	GetFullURL(shortURL string) (string, error)
-	saveData(fullURL string, userid string, hash string) error
-	InsertURL(fURL string, userID string) (string, error)
-	GetAllUserURLs(userid string) ([]SlicedURL, error)
-	Ping() error
+	GetShortURL(ctx context.Context, fullURL string) (string, error)
+	GetFullURL(ctx context.Context, shortURL string) (string, error)
+	saveData(ctx context.Context, fullURL string, userid string, hash string) error
+	InsertURL(ctx context.Context, fURL string, userID string) (string, error)
+	GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error)
+	Ping(ctx context.Context) error
 }
 
 type NodeURL struct {

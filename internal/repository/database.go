@@ -1,10 +1,12 @@
 package repository
 
 import (
+	"context"
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"time"
 
 	_ "github.com/jackc/pgx/stdlib"
 
@@ -56,11 +58,14 @@ func (d *Database) Connect(conf *config.Config) (err error) {
 }
 
 // GetShortURL - метод, возвращающий hash сокращенного url.
-func (d *Database) GetShortURL(fullURL string) (string, error) {
+func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, error) {
 	var hash string
+	//Задаем контекст на основе переданного из запроса
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
 	//Готовим SQL запрос и выполняем.
 	str := `SELECT "hash" FROM "shortener" WHERE "url" = $1`
-	err := d.DB.QueryRow(str, fullURL).Scan(&hash)
+	err := d.DB.QueryRowContext(ctx, str, fullURL).Scan(&hash)
 	if err != nil {
 		return "", err
 	}
@@ -69,11 +74,14 @@ func (d *Database) GetShortURL(fullURL string) (string, error) {
 }
 
 // GetFullURL - метод, возвращающий original_url по его hash.
-func (d *Database) GetFullURL(hash string) (string, error) {
+func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) {
 	var fullURL string
+	//Задаем контекст на основе переданного из запроса
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
 	//Готовим SQL запрос и выполняем.
 	str := `SELECT "url" FROM "shortener" WHERE "hash" = $1`
-	err := d.DB.QueryRow(str, hash).Scan(&fullURL)
+	err := d.DB.QueryRowContext(ctx, str, hash).Scan(&fullURL)
 	if err != nil {
 		return "", err
 	}
@@ -82,11 +90,14 @@ func (d *Database) GetFullURL(hash string) (string, error) {
 }
 
 // InsertURL - метод, который сохраняет original_url,user_id и hash в базу данных.
-func (d *Database) saveData(fullURL string, userid string, hash string) error {
+func (d *Database) saveData(ctx context.Context, fullURL string, userid string, hash string) error {
 	//Проверяем полученные данные.
 	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
 		return errors.New("ErrNoEmptyInsert")
 	}
+	//Задаем контекст на основе переданного из запроса
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
@@ -101,7 +112,7 @@ func (d *Database) saveData(fullURL string, userid string, hash string) error {
 	}
 	defer st.Close()
 	//Выполняем стейтмент.
-	_, err = st.Exec(hash, fullURL, userid)
+	_, err = st.ExecContext(ctx, hash, fullURL, userid)
 	if err != nil {
 		return err
 	}
@@ -114,15 +125,15 @@ func (d *Database) saveData(fullURL string, userid string, hash string) error {
 }
 
 // InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
-func (d *Database) InsertURL(fullURL string, userID string) (string, error) {
+func (d *Database) InsertURL(ctx context.Context, fullURL string, userID string) (string, error) {
 	//Генерируем hash.
 	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
 	//Проверяем есть ли в хранилище такой url.
-	okHash, err := d.GetShortURL(fullURL)
+	okHash, err := d.GetShortURL(ctx, fullURL)
 	//Если нет,то вставляем новые данные.
 	if err != nil {
-		err = d.saveData(fullURL, userID, hash)
+		err = d.saveData(ctx, fullURL, userID, hash)
 		if err != nil {
 			return "", err
 		}
@@ -134,14 +145,17 @@ func (d *Database) InsertURL(fullURL string, userID string) (string, error) {
 }
 
 // GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
-func (d *Database) GetAllUserURLs(userid string) ([]SlicedURL, error) {
+func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error) {
+	//Задаем контекст на основе переданного из запроса
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
 	//Объявляем переменные и массив с результатом.
 	var hash string
 	var url string
 	result := make([]SlicedURL, 0)
 	//Подготавливаем/выполняем запрос базе данных.
 	str := `SELECT "hash", "url" FROM "shortener" WHERE "userid" = $1`
-	rows, err := d.DB.Query(str, userid)
+	rows, err := d.DB.QueryContext(ctx, str, userid)
 	//Проверяем обе! ошибки.
 	if err != nil || rows.Err() != nil {
 		return nil, err
@@ -164,6 +178,9 @@ func (d *Database) GetAllUserURLs(userid string) ([]SlicedURL, error) {
 }
 
 // Ping - возвращает ответ от БД Ping.
-func (d *Database) Ping() error {
-	return d.DB.Ping()
+func (d *Database) Ping(ctx context.Context) error {
+	//Задаем контекст на основе переданного из запроса
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+	return d.DB.PingContext(ctx)
 }
