@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -38,7 +39,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
-		hash, err := controller.InsertURL("http://test.test/test", "sadASdQeAWDwdAs")
+		hash, err := controller.InsertURL(context.Background(), "http://test.test/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
 		assert.NotEmpty(t, hash)
 		ts := httptest.NewServer(r)
@@ -62,7 +63,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
-		hash, err := controller.InsertURL("http://test.test/test", "sadASdQeAWDwdAs")
+		hash, err := controller.InsertURL(context.Background(), "http://test.test/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
 		ts := httptest.NewServer(r)
 		defer ts.Close()
@@ -184,7 +185,7 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 			Full: "http://www.test.net/test"})
 		require.NoError(t, err)
 		assert.NotNil(t, b)
-		hash, err := controller.InsertURL("http://www.test.net/test", "sadASdQeAWDwdAs")
+		hash, err := controller.InsertURL(context.Background(), "http://www.test.net/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
 		assert.NotNil(t, hash)
 		req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", bytes.NewBuffer(b))
@@ -210,7 +211,7 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 			Full: "http://www.test.net/test"})
 		require.NoError(t, err)
 		assert.NotNil(t, b)
-		hash, err := controller.InsertURL("http://www.test.net/test", "sadASdQeAWDwdAs")
+		hash, err := controller.InsertURL(context.Background(), "http://www.test.net/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
 		assert.NotNil(t, hash)
 		req, err := http.NewRequest(http.MethodPatch, ts.URL+"/api/shorten", bytes.NewBuffer(b))
@@ -230,7 +231,7 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 			Full: ""})
 		require.NoError(t, err)
 		assert.NotNil(t, b)
-		hash, err := controller.InsertURL("http://www.test.net/test", "sadASdQeAWDwdAs")
+		hash, err := controller.InsertURL(context.Background(), "http://www.test.net/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
 		assert.NotNil(t, hash)
 		req, err := http.NewRequest(http.MethodPatch, ts.URL+"/api/shorten", bytes.NewBuffer(b))

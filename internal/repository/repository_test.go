@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,11 +73,11 @@ func TestStorage_InsertURL(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
 			if !tt.wantErr {
-				err := db.saveData(tt.fullURL, tt.userID, tt.hash)
+				err := db.saveData(context.Background(), tt.fullURL, tt.userID, tt.hash)
 				require.NoError(t, err)
 			}
 			if tt.wantErr {
-				err := db.saveData(tt.fullURL, tt.userID, tt.hash)
+				err := db.saveData(context.Background(), tt.fullURL, tt.userID, tt.hash)
 				require.ErrorContains(t, err, "ErrNoEmptyInsert")
 			}
 		})
@@ -113,14 +114,14 @@ func TestStorage_GetFullURL(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
 			if !tt.wantErr {
-				res, err := db.InsertURL(tt.fullURL, tt.userID)
+				res, err := db.InsertURL(context.Background(), tt.fullURL, tt.userID)
 				require.NoError(t, err)
-				got, err := db.GetFullURL(res)
+				got, err := db.GetFullURL(context.Background(), res)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.want, got)
 			}
 			if tt.wantErr {
-				got, err := db.GetFullURL(tt.shortURL)
+				got, err := db.GetFullURL(context.Background(), tt.shortURL)
 				assert.Equal(t, tt.want, got)
 				assert.Error(t, err)
 			}
@@ -156,15 +157,15 @@ func TestStorage_GetShortURL(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
 			if !tt.wantErr {
-				res, err := db.InsertURL(tt.fullURL, tt.userID)
+				res, err := db.InsertURL(context.Background(), tt.fullURL, tt.userID)
 				require.NoError(t, err)
 				assert.NotNil(t, res)
-				got, err := db.GetShortURL(tt.fullURL)
+				got, err := db.GetShortURL(context.Background(), tt.fullURL)
 				assert.NoError(t, err)
 				assert.Equal(t, res, got)
 			}
 			if tt.wantErr {
-				got, err := db.GetShortURL(tt.fullURL)
+				got, err := db.GetShortURL(context.Background(), tt.fullURL)
 				assert.Equal(t, tt.want, got)
 				assert.ErrorIs(t, err, err)
 			}
