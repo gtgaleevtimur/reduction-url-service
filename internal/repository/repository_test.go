@@ -18,9 +18,7 @@ func TestNewStorage(t *testing.T) {
 		{
 			name: "Positive test",
 			want: &Storage{
-				Counter:        0,
-				FullURLKeyMap:  make(map[string]ShortURL),
-				ShortURLKeyMap: make(map[string]FullURL),
+				Data: make(map[string]URL),
 			},
 		},
 	}
@@ -36,77 +34,77 @@ func TestNewStorage(t *testing.T) {
 func TestStorage_InsertURL(t *testing.T) {
 	tests := []struct {
 		name    string
-		longURL string
-		want    string
+		fullURL string
+		userID  string
+		hash    string
 		wantErr bool
-		preset  bool
 	}{
 		{
 			name:    "Positive test",
-			longURL: "http://test.test/test1",
-			want:    "0",
+			fullURL: "http://test.test/test",
+			userID:  "ASDfdSsWq",
+			hash:    "46548a90a389b2cde5f3710e6126531",
 			wantErr: false,
-			preset:  false,
 		},
 		{
-			name:    "Negative test with nil input ",
-			longURL: "",
-			want:    "",
+			name:    "Negative test with nil fullURL",
+			fullURL: "",
+			userID:  "ASDfdSsWq",
+			hash:    "46548a90a389b2cde5f3710e6126531",
 			wantErr: true,
-			preset:  false,
 		},
 		{
-			name:    "Positive test with url already exist",
-			longURL: "http://test.test/test1",
-			want:    "0",
-			wantErr: false,
-			preset:  true,
+			name:    "Negative test with nil userID",
+			fullURL: "http://test.test/test",
+			userID:  " ",
+			hash:    "46548a90a389b2cde5f3710e6126531",
+			wantErr: true,
+		},
+		{
+			name:    "Negative test with nil hash",
+			fullURL: "http://test.test/test",
+			userID:  "ASDfdSsWq",
+			hash:    " ",
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
-			ctx := context.Background()
-			if tt.preset {
-				_, err := db.InsertURL(ctx, tt.longURL)
+			if !tt.wantErr {
+				err := db.saveData(context.Background(), tt.fullURL, tt.userID, tt.hash)
 				require.NoError(t, err)
 			}
-			got, err := db.InsertURL(ctx, tt.longURL)
-			if !tt.wantErr {
-				assert.NoError(t, err)
+			if tt.wantErr {
+				err := db.saveData(context.Background(), tt.fullURL, tt.userID, tt.hash)
+				require.ErrorContains(t, err, "ErrNoEmptyInsert")
 			}
-			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestStorage_Get(t *testing.T) {
+func TestStorage_GetFullURL(t *testing.T) {
 	tests := []struct {
 		name     string
+		fullURL  string
+		userID   string
 		shortURL string
-		longURL  string
 		want     string
 		wantErr  bool
 	}{
 		{
-			name:     "Positive test",
-			shortURL: "0",
-			longURL:  "http://test.test/test1",
-			want:     "http://test.test/test1",
-			wantErr:  false,
+			name:    "Positive test",
+			fullURL: "http://test.test/test",
+			userID:  "ASDfdSsWq",
+			want:    "http://test.test/test",
+			wantErr: false,
 		},
 		{
 			name:     "Negative test not exist",
-			shortURL: "0",
-			longURL:  "http://test.test/test1",
-			want:     "",
-			wantErr:  true,
-		},
-		{
-			name:     "Negative test with nil input",
-			shortURL: "",
-			longURL:  "http://test.test/test1",
+			fullURL:  "http://test.test/test",
+			userID:   "ASDfdSsWq",
+			shortURL: "notIsShortURL",
 			want:     "",
 			wantErr:  true,
 		},
@@ -115,16 +113,15 @@ func TestStorage_Get(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
-			ctx := context.Background()
 			if !tt.wantErr {
-				_, err := db.InsertURL(ctx, tt.longURL)
+				res, err := db.InsertURL(context.Background(), tt.fullURL, tt.userID)
 				require.NoError(t, err)
-				got, err := db.GetFullURL(ctx, tt.shortURL)
+				got, err := db.GetFullURL(context.Background(), res)
 				assert.NoError(t, err)
 				assert.Equal(t, tt.want, got)
 			}
 			if tt.wantErr {
-				got, err := db.GetFullURL(ctx, tt.shortURL)
+				got, err := db.GetFullURL(context.Background(), tt.shortURL)
 				assert.Equal(t, tt.want, got)
 				assert.Error(t, err)
 			}
@@ -134,51 +131,92 @@ func TestStorage_Get(t *testing.T) {
 
 func TestStorage_GetShortURL(t *testing.T) {
 	tests := []struct {
-		name     string
-		shortURL string
-		longURL  string
-		want     string
-		wantErr  bool
+		name    string
+		fullURL string
+		userID  string
+		want    string
+		wantErr bool
 	}{
 		{
-			name:     "Positive test",
-			shortURL: "0",
-			longURL:  "http://test.test/test1",
-			want:     "0",
-			wantErr:  false,
+			name:    "Positive test",
+			fullURL: "http://test.test/test",
+			userID:  "ASDfdSsWq",
+			want:    "http://test.test/test",
+			wantErr: false,
 		},
 		{
-			name:     "Negative test not exist",
-			shortURL: "0",
-			longURL:  "http://test.test/test1",
-			want:     "",
-			wantErr:  true,
-		},
-		{
-			name:     "Negative test with nil input",
-			shortURL: "",
-			longURL:  "http://test.test/test1",
-			want:     "",
-			wantErr:  true,
+			name:    "Negative test not exist",
+			fullURL: "http://test.test/test",
+			userID:  "ASDfdSsWq",
+			want:    "",
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cnf := config.NewConfig()
 			db := NewStorage(cnf)
-			ctx := context.Background()
 			if !tt.wantErr {
-				_, err := db.InsertURL(ctx, tt.longURL)
+				res, err := db.InsertURL(context.Background(), tt.fullURL, tt.userID)
 				require.NoError(t, err)
-				got, err := db.GetShortURL(ctx, tt.longURL)
+				assert.NotNil(t, res)
+				got, err := db.GetShortURL(context.Background(), tt.fullURL)
 				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				assert.Equal(t, res, got)
 			}
 			if tt.wantErr {
-				got, err := db.GetShortURL(ctx, tt.longURL)
+				got, err := db.GetShortURL(context.Background(), tt.fullURL)
 				assert.Equal(t, tt.want, got)
-				assert.Error(t, err)
+				assert.ErrorIs(t, err, err)
 			}
 		})
 	}
 }
+
+//Внимание тут нужно разобраться.
+/*
+func TestMapStorage_LoadRecoveryStorage(t *testing.T) {
+	t.Run("Test load  from recovery storage", func(t *testing.T) {
+		data := map[int]string{
+			1: `{"original_url":"http://www.test.test/test","hash":"sdfsdgsASDsdf","user_id":"dsfwe"}`,
+			2: `{"original_url": "http://www.test.test/test/test", "hash": "sdfwe32gf","user_id":"safwe"}`,
+		}
+		m := map[int]NodeURL{
+			1: {
+				FURL:   "http://www.test.test/test",
+				UserID: "dsfwe",
+				Hash:   "sdfsdgsASDsdf",
+			},
+			2: {
+				FURL:   "http://www.test.test/test/test",
+				UserID: "safwe",
+				Hash:   "sdfwe32gf",
+			},
+		}
+		path := "./text.txt"
+		err := os.Setenv("FILE_STORAGE_PATH", path)
+		defer os.Clearenv()
+		require.NoError(t, err)
+		file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0664)
+		require.NoError(t, err)
+		defer os.Remove(path)
+		writer := bufio.NewWriter(file)
+		for _, d := range data {
+			_, err = writer.WriteString(d + "\n")
+			require.NoError(t, err)
+		}
+		writer.Flush()
+		file.Close()
+		cnf := config.NewConfig(config.WithParseEnv())
+		s := NewStorage(cnf)
+		err = s.LoadRecoveryStorage(cnf.StoragePath)
+		require.NoError(t, err)
+
+		for _, item := range m {
+			_, err := s.GetShortURL(item.FURL)
+			assert.Nil(t, err)
+
+		}
+	})
+}
+*/

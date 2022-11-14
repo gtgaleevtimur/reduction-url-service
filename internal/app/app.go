@@ -1,15 +1,25 @@
 package app
 
 import (
-	"log"
-
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
-	hd "github.com/gtgaleevtimur/reduction-url-service/internal/handlers"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/handler"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
+	"log"
+	"net/http"
 )
 
 func Run() {
+	//Конфигурация приложения через считывание флагов и переменных окружения.
 	conf := config.NewConfig(config.WithParseEnv())
-	storage := repository.NewStorage(conf)
-	log.Fatal(hd.NewRouter(storage, conf).Run(conf.ServerAddress))
+	//Инициализация хранилища приложения.
+	storage, err := repository.NewDataSource(conf)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//Инициализация и запуск сервера.
+	server := &http.Server{
+		Handler: handler.NewRouter(storage, conf),
+		Addr:    conf.ServerAddress,
+	}
+	log.Fatal(server.ListenAndServe())
 }

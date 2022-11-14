@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"bytes"
@@ -36,15 +36,15 @@ func TestNewServerStore(t *testing.T) {
 
 func TestServerStore_GetFullUrl(t *testing.T) {
 	t.Run("Positive test", func(t *testing.T) {
-		ctx := context.Background()
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
-		_, err := controller.InsertURL(ctx, "http://test.test/test1")
+		hash, err := controller.InsertURL(context.Background(), "http://test.test/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
+		assert.NotEmpty(t, hash)
 		ts := httptest.NewServer(r)
 		defer ts.Close()
-		req, err := http.NewRequest(http.MethodGet, ts.URL+"/0", nil)
+		req, err := http.NewRequest(http.MethodGet, ts.URL+"/"+hash, nil)
 		require.NoError(t, err)
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -56,19 +56,18 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
-		assert.Equal(t, "http://test.test/test1", resp.Header.Get("Location"))
+		assert.Equal(t, "http://test.test/test", resp.Header.Get("Location"))
 		assert.Equal(t, "", string(body))
 	})
 	t.Run("Negative test with another method", func(t *testing.T) {
-		ctx := context.Background()
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
 		r := NewRouter(controller, cnf)
-		_, err := controller.InsertURL(ctx, "http://test.test/test1")
+		hash, err := controller.InsertURL(context.Background(), "http://test.test/test", "sadASdQeAWDwdAs")
 		require.NoError(t, err)
 		ts := httptest.NewServer(r)
 		defer ts.Close()
-		req, err := http.NewRequest(http.MethodPost, ts.URL+"/0", nil)
+		req, err := http.NewRequest(http.MethodPost, ts.URL+"/"+hash, nil)
 		require.NoError(t, err)
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -80,7 +79,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		assert.Equal(t, "", string(body))
+		assert.Equal(t, "method does not allowed", string(body))
 	})
 	t.Run("Negative without url in DB", func(t *testing.T) {
 		cnf := config.NewConfig()
@@ -100,14 +99,13 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		assert.Equal(t, "", string(body))
+		assert.Equal(t, "ErrNotFoundURL\n", string(body))
 	})
 }
 
 func TestServerStore_CreateShortURL(t *testing.T) {
 	type want struct {
 		statusCode int
-		shortURL   string
 		respType   string
 	}
 
@@ -123,10 +121,9 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 			name:    "Positive test",
 			request: "/",
 			method:  http.MethodPost,
-			reqBody: "https://www.test.net/test",
+			reqBody: "http://www.test.test/test",
 			want: want{
-				respType:   "text/plain",
-				shortURL:   "http://localhost:8080/0",
+				respType:   "text/plain; charset=utf-8",
 				statusCode: http.StatusCreated,
 			},
 			wantErr: false,
@@ -135,10 +132,9 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 			name:    "Negative test with another method",
 			request: "/",
 			method:  http.MethodGet,
-			reqBody: "https://www.test.net/test",
+			reqBody: "http://www.test.net/test",
 			want: want{
-				respType:   "text/plain",
-				shortURL:   "0",
+				respType:   "text/plain ; charset=utf-8",
 				statusCode: http.StatusBadRequest,
 			},
 			wantErr: true,
@@ -150,7 +146,6 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 			reqBody: "",
 			want: want{
 				respType:   "text/plain ; charset=utf-8",
-				shortURL:   "",
 				statusCode: http.StatusBadRequest,
 			},
 			wantErr: true,
@@ -165,22 +160,12 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 			defer ts.Close()
 			req, err := http.NewRequest(tt.method, ts.URL+tt.request, bytes.NewBuffer([]byte(tt.reqBody)))
 			require.NoError(t, err)
-
 			resp, err := http.DefaultClient.Do(req)
 			require.NoError(t, err)
-
 			defer resp.Body.Close()
-
 			if !tt.wantErr {
 				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 				assert.Equal(t, tt.want.respType, resp.Header.Get("Content-Type"))
-
-				body, err := ioutil.ReadAll(resp.Body)
-				require.NoError(t, err)
-				err = resp.Body.Close()
-				require.NoError(t, err)
-
-				assert.Equal(t, tt.want.shortURL, string(body))
 			}
 			if tt.wantErr {
 				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
@@ -190,109 +175,70 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 }
 
 func TestServerHandler_GetShortURL(t *testing.T) {
-	type want struct {
-		statusCode int
-		respBody   repository.ShortURL
-	}
-
-	tests := []struct {
-		name    string
-		request string
-		reqBody repository.FullURL
-		method  string
-		preset  bool
-		want    want
-		wantErr bool
-	}{
-		{
-			name:    "Negative test with nil body",
-			request: "/api/shorten",
-			method:  http.MethodPost,
-			preset:  false,
-			reqBody: repository.FullURL{
-				Full: "",
-			},
-			want: want{
-				statusCode: 400,
-			},
-			wantErr: true,
-		},
-		{
-			name:    "Negative test with another method",
-			request: "/api/shorten",
-			method:  http.MethodGet,
-			preset:  false,
-			reqBody: repository.FullURL{
-				Full: "testURL",
-			},
-			want: want{
-				statusCode: http.StatusBadRequest,
-			},
-			wantErr: true,
-		},
-		{
-			name:    "Positive test with Insert",
-			request: "/api/shorten",
-			method:  http.MethodPost,
-			preset:  true,
-			reqBody: repository.FullURL{
-				Full: "testURL",
-			},
-			want: want{
-				statusCode: 200,
-				respBody:   repository.ShortURL{Short: "http://localhost:8080/0"},
-			},
-			wantErr: false,
-		},
-		{
-			name:    "Positive test without Insert",
-			request: "/api/shorten",
-			method:  http.MethodPost,
-			preset:  false,
-			reqBody: repository.FullURL{Full: "testURL"},
-			wantErr: false,
-			want: want{
-				statusCode: 201,
-				respBody:   repository.ShortURL{Short: "http://localhost:8080/0"},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			cnf := config.NewConfig()
-			controller := repository.NewStorage(cnf)
-			r := NewRouter(controller, cnf)
-			ts := httptest.NewServer(r)
-			defer ts.Close()
-
-			b, _ := json.Marshal(tt.reqBody)
-			if tt.preset {
-				_, err := controller.InsertURL(ctx, tt.reqBody.Full)
-				require.NoError(t, err)
-			}
-
-			req, err := http.NewRequest(tt.method, ts.URL+tt.request, bytes.NewBuffer(b))
-			require.NoError(t, err)
-
-			resp, err := http.DefaultClient.Do(req)
-			require.NoError(t, err)
-
-			defer resp.Body.Close()
-
-			if !tt.wantErr {
-				body, err := ioutil.ReadAll(resp.Body)
-				require.NoError(t, err)
-				var r repository.ShortURL
-				_ = json.Unmarshal(body, &r)
-
-				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-				assert.Equal(t, tt.want.respBody, r)
-			}
-			if tt.wantErr {
-				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-			}
-
-		})
-	}
+	t.Run("Positive test", func(t *testing.T) {
+		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
+		r := NewRouter(controller, cnf)
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+		b, err := json.Marshal(repository.FullURL{
+			Full: "http://www.test.net/test"})
+		require.NoError(t, err)
+		assert.NotNil(t, b)
+		hash, err := controller.InsertURL(context.Background(), "http://www.test.net/test", "sadASdQeAWDwdAs")
+		require.NoError(t, err)
+		assert.NotNil(t, hash)
+		req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/shorten", bytes.NewBuffer(b))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		var short repository.ShortURL
+		err = json.Unmarshal(body, &short)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusConflict, resp.StatusCode)
+		assert.Equal(t, "http://localhost:8080/"+hash, short.Short)
+	})
+	t.Run("Negative test with another method", func(t *testing.T) {
+		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
+		r := NewRouter(controller, cnf)
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+		b, err := json.Marshal(repository.FullURL{
+			Full: "http://www.test.net/test"})
+		require.NoError(t, err)
+		assert.NotNil(t, b)
+		hash, err := controller.InsertURL(context.Background(), "http://www.test.net/test", "sadASdQeAWDwdAs")
+		require.NoError(t, err)
+		assert.NotNil(t, hash)
+		req, err := http.NewRequest(http.MethodPatch, ts.URL+"/api/shorten", bytes.NewBuffer(b))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+	t.Run("Negative test with nil body", func(t *testing.T) {
+		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
+		r := NewRouter(controller, cnf)
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+		b, err := json.Marshal(repository.FullURL{
+			Full: ""})
+		require.NoError(t, err)
+		assert.NotNil(t, b)
+		hash, err := controller.InsertURL(context.Background(), "http://www.test.net/test", "sadASdQeAWDwdAs")
+		require.NoError(t, err)
+		assert.NotNil(t, hash)
+		req, err := http.NewRequest(http.MethodPatch, ts.URL+"/api/shorten", bytes.NewBuffer(b))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
 }
