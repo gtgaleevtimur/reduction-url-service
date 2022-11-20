@@ -59,11 +59,11 @@ func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error)
 	s.Lock()
 	defer s.Unlock()
 	for hash, value := range s.Data {
-		if value.FURL == fullURL {
+		if value.FURL == fullURL && !value.Delete {
 			return hash, nil
 		}
 	}
-	return "", errors.New("ErrNotFoundURL")
+	return "", ErrNotFoundURL
 }
 
 // GetFullURL - метод, возвращающий original_url по его hash.
@@ -71,9 +71,15 @@ func (s *Storage) GetFullURL(_ context.Context, shortURL string) (string, error)
 	s.Lock()
 	defer s.Unlock()
 	if val, ok := s.Data[shortURL]; ok {
+		//Если URL удален возвращаем соответствующую ошибку.
+		if val.Delete {
+			return "", ErrDeletedURL
+		}
+		//Иначе возвращаем hash запрашиваемого URL.
 		return val.FURL, nil
 	}
-	return "", errors.New("ErrNotFoundURL")
+	//Возвращаем соответствующую ошибку если URL не найден.
+	return "", ErrNotFoundURL
 }
 
 // InsertURL - метод,заполняющий хранилище данными(полный url, id пользователя, hash).
@@ -89,14 +95,16 @@ func (s *Storage) saveData(_ context.Context, fullURL string, userid string, has
 	s.Data[hash] = URL{
 		UserID: userid,
 		FURL:   fullURL,
+		Delete: false,
 	}
-	//Если FILE_STORAGE_PATH выставлен,то записывает данные в резервное хранилище..
+	//Если FILE_STORAGE_PATH выставлен, нто записывает данные в резервное хранилище..
 	if s.FileRecover != nil {
 		//Готовим структуру для резервного хранилища.
 		URLItem := NodeURL{
 			Hash:   hash,
 			FURL:   fullURL,
 			UserID: userid,
+			Delete: false,
 		}
 		//Записываем.
 		err := s.FileRecover.Writer.Write(&URLItem)
@@ -107,7 +115,7 @@ func (s *Storage) saveData(_ context.Context, fullURL string, userid string, has
 	return nil
 }
 
-// LoadRecoveryStorage - метод , восстанавливающий данные из резервного хранилища при инициализации in-memory.
+// LoadRecoveryStorage - метод, восстанавливающий данные из резервного хранилища при инициализации in-memory.
 func (s *Storage) LoadRecoveryStorage(str string) error {
 	//Выполняем проверку текущей конфигурации.
 	if str == "" {
@@ -136,6 +144,7 @@ func (s *Storage) LoadRecoveryStorage(str string) error {
 		s.Data[node.Hash] = URL{
 			UserID: node.UserID,
 			FURL:   node.FURL,
+			Delete: node.Delete,
 		}
 	}
 	return nil
@@ -151,18 +160,53 @@ func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL,
 	//Итерируемся по хранилищу
 	for hash, url := range s.Data {
 		//Если нашли совпадение userID,то добавляем в массив данные.
-		if url.UserID == userid {
+		if url.UserID == userid && !url.Delete {
 			result = append(result, SlicedURL{
 				Short: hash,
 				Full:  url.FURL,
 			})
 		}
 	}
+	//Если записи не найдены возвращаем ошибку
 	if len(result) == 0 {
 		return nil, errors.New("ErrNotExistUserURLs")
-	} else {
-		return result, nil
 	}
+	//Иначе возвращаем массив
+	return result, nil
+}
+
+// Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
+func (s *Storage) Delete(_ context.Context, shortURL []string, userID string) error {
+	//Блокируем хранилище на время выполнения операции.
+	s.Lock()
+	defer s.Unlock()
+	//Итерируемся по массиву с hash
+	for _, hash := range shortURL {
+		// Проверяем что userID URL в базе данных с таким hash соответствует userID, сделавшему запрос
+		if s.Data[hash].UserID == userID {
+			//Применяем изменения.
+			s.Data[hash] = URL{
+				UserID: userID,
+				FURL:   s.Data[hash].FURL,
+				Delete: true,
+			}
+			//Если задан файл для резервного хранения, то пишем так же туда.
+			if s.FileRecover != nil {
+				URLItem := NodeURL{
+					Hash:   hash,
+					FURL:   s.Data[hash].FURL,
+					UserID: userID,
+					Delete: true,
+				}
+				//Записываем.
+				err := s.FileRecover.Writer.Write(&URLItem)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // Ping - метод заглушка для in-memory.

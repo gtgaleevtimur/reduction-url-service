@@ -12,6 +12,7 @@ type Storager interface {
 	saveData(ctx context.Context, fullURL string, userid string, hash string) error
 	InsertURL(ctx context.Context, fURL string, userID string) (string, error)
 	GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error)
+	Delete(ctx context.Context, shortURL []string, userID string) error
 	Ping(ctx context.Context) error
 }
 
@@ -19,11 +20,13 @@ type NodeURL struct {
 	Hash   string `json:"hash"`
 	FURL   string `json:"original_url"`
 	UserID string `json:"user_id"`
+	Delete bool   `json:"is_deleted"`
 }
 
 type URL struct {
 	UserID string `json:"userid"`
 	FURL   string `json:"original_url"`
+	Delete bool   `json:"is_deleted"`
 }
 
 type FullURL struct {
@@ -49,5 +52,11 @@ type ShortBatch struct {
 	Short string `json:"short_url"`
 }
 
-//ErrConflictInsert - ошибка,показывающая что сохраняемый URL уже есть в базе данных.
+// ErrConflictInsert - ошибка,показывающая что сохраняемый URL уже есть в базе данных.
 var ErrConflictInsert error = errors.New("URL is exist")
+
+// ErrNotFoundURL - ошибка,показывающая что запрашиваемый URL нет в базе данных.
+var ErrNotFoundURL error = errors.New("URL not found in DB")
+
+// ErrDeletedURL - ошибка,показывающая что запрашиваемый URL нет удален из БД.
+var ErrDeletedURL error = errors.New("URL is delete")

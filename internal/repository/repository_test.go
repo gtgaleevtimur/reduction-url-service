@@ -215,8 +215,6 @@ func TestMapStorage_LoadRecoveryStorage(t *testing.T) {
 		for _, item := range m {
 			_, err := s.GetShortURL(item.FURL)
 			assert.Nil(t, err)
-
 		}
 	})
-}
-*/
+}*/
