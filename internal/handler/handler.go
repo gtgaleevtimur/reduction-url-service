@@ -38,6 +38,7 @@ func NewRouter(s repository.Storager, c *config.Config) chi.Router {
 		router.Get("/ping", controller.Ping)
 
 		router.Route("/api", func(router chi.Router) {
+			router.Delete("/user/urls", controller.DeleteBatch)
 			router.Get("/user/urls", controller.GetAllUserURLs)
 			router.Post("/shorten", controller.ShortURLJSONBy)
 			router.Post("/shorten/batch", controller.PostBatch)
@@ -109,6 +110,10 @@ func (h ServerHandler) FullURLHashBy(w http.ResponseWriter, r *http.Request) {
 	//Запрашиваем оригинальный URL из базы данных.
 	fullURL, err := h.Storage.GetFullURL(r.Context(), shortURL)
 	if err != nil {
+		if errors.Is(err, repository.ErrDeletedURL) {
+			w.WriteHeader(http.StatusGone)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -269,6 +274,38 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(resultJSON)
+}
+
+// DeleteBatch - обработчик эндпоинта DELETE /api/user/urls , принимает в теле запроса JSON ,
+//с идентификаторами сокращенных URL (hash),запускает асинхронный процесс удаления этих URL.
+func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
+	//Читаем тело запроса.
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	//Получаем cookie пользователя.
+	userid, err := r.Cookie("shortener")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	//Создаем массив для разбора тела запроса
+	var hashSlice []string
+	//Так как ожидаем JSON в теле запроса в виде {[ "a", "b", "c", "d", ...]}
+	//парсим запрос и записываем результат в массив для разбора
+	err = json.Unmarshal(body, &hashSlice)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	//В отдельной горутине запускаем процесс удаления
+	//Передаем горутине список и cookie
+	go h.Storage.Delete(r.Context(), hashSlice, userid.Value)
+	//Пишем ответ.
+	w.WriteHeader(http.StatusAccepted)
 }
 
 // NotFound - обработчик неподдерживаемых маршрутов.

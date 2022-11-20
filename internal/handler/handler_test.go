@@ -99,7 +99,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		assert.Equal(t, "ErrNotFoundURL\n", string(body))
+		assert.Equal(t, "URL not found in DB\n", string(body))
 	})
 }
 
