@@ -19,7 +19,7 @@ type Database struct {
 	DB *sql.DB
 }
 
-// NewDatabaseDSN - конструктор базы данных на основе SQL,возвращает интерфейс.
+// NewDatabaseDSN - конструктор базы данных на основе SQL, возвращает интерфейс.
 func NewDatabaseDSN(conf *config.Config) (Storager, error) {
 	s := &Database{}
 	err := s.Connect(conf)
@@ -35,7 +35,7 @@ func NewDatabaseDSN(conf *config.Config) (Storager, error) {
 }
 
 func (d *Database) Bootstrap() (err error) {
-	//Подготавливаем SQL запрос на создание таблицы,если ее нет.
+	//Подготавливаем SQL запрос на создание таблицы, если ее нет.
 	table := `CREATE TABLE IF NOT EXISTS "shortener" ("hash" TEXT UNIQUE PRIMARY KEY NOT NULL,
 													"url" TEXT UNIQUE NOT NULL,
 													"userid" TEXT NOT NULL,
@@ -65,15 +65,15 @@ func (d *Database) Connect(conf *config.Config) (err error) {
 func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, error) {
 	var hash string
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 	//Готовим SQL запрос и выполняем.
-	str := `SELECT "hash" FROM "shortener" WHERE "url" = $1 AND "delete"=false`
+	str := `SELECT "hash" FROM "shortener" WHERE "url" = $1 AND "delete" = false`
 	err := d.DB.QueryRowContext(ctx, str, fullURL).Scan(&hash)
 	if err != nil {
 		return "", err
 	}
-	//Возвращем hash,если не было ошибки.
+	//Возвращем hash, если не было ошибки.
 	return hash, nil
 }
 
@@ -82,10 +82,10 @@ func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) 
 	var fullURL string
 	var del bool
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 	//Готовим SQL запрос и выполняем.
-	str := `SELECT "url","delete" FROM "shortener" WHERE "hash" = $1`
+	str := `SELECT "url", "delete" FROM "shortener" WHERE "hash" = $1`
 	err := d.DB.QueryRowContext(ctx, str, hash).Scan(&fullURL, &del)
 	if err != nil {
 		return "", err
@@ -94,7 +94,7 @@ func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) 
 	if del {
 		return "", ErrDeletedURL
 	}
-	//Возвращем original_url,если не было ошибки.
+	//Возвращем original_url, если не было ошибки.
 	return fullURL, nil
 }
 
@@ -105,7 +105,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 		return errors.New("ErrNoEmptyInsert")
 	}
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
@@ -115,7 +115,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
 	str := `INSERT INTO "shortener"("hash","url","userid","delete")VALUES ($1,$2,$3,false)`
-	st, err := d.DB.Prepare(str)
+	st, err := tr.Prepare(str)
 	if err != nil {
 		return err
 	}
@@ -156,14 +156,14 @@ func (d *Database) InsertURL(ctx context.Context, fullURL string, userID string)
 // GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error) {
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 	//Объявляем переменные и массив с результатом.
 	var hash string
 	var url string
 	result := make([]SlicedURL, 0)
 	//Подготавливаем/выполняем запрос базе данных.
-	str := `SELECT "hash", "url" FROM "shortener" WHERE "userid" = $1 AND "delete"=false`
+	str := `SELECT "hash", "url" FROM "shortener" WHERE "userid" = $1 AND "delete" = false`
 	rows, err := d.DB.QueryContext(ctx, str, userid)
 	//Проверяем обе! ошибки.
 	if err != nil || rows.Err() != nil {
@@ -189,7 +189,7 @@ func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedU
 // Ping - возвращает ответ от БД Ping.
 func (d *Database) Ping(ctx context.Context) error {
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
 	defer cancel()
 	return d.DB.PingContext(ctx)
 }
@@ -207,7 +207,7 @@ func (d *Database) Delete(ctx context.Context, shortURL []string, userID string)
 	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
 	str := `UPDATE "shortener" SET "delete"=true WHERE "hash" = any ($1) and "userid" = $2`
-	st, err := d.DB.Prepare(str)
+	st, err := tr.Prepare(str)
 	if err != nil {
 		return err
 	}
