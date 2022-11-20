@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"io"
@@ -62,7 +63,7 @@ func newServerHandler(s repository.Storager, c *config.Config) *ServerHandler {
 	return &ServerHandler{Storage: s, Conf: c}
 }
 
-// ShortURLTextBy - обработчик эндпоинта POST / ,принимает в теле запроса текстовую строку URL для сокращения
+// ShortURLTextBy - обработчик эндпоинта POST /, принимает в теле запроса текстовую строку URL для сокращения
 // и возвращает ответ с кодом 201 и сокращённым URL в виде текстовой строки в теле.
 func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	//Читаем тело и проверяем ошибку.
@@ -280,12 +281,12 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 //с идентификаторами сокращенных URL (hash),запускает асинхронный процесс удаления этих URL.
 func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	//Читаем тело запроса.
-	body, err := io.ReadAll(r.Body)
+	//body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	//if err != nil {
+	//http.Error(w, err.Error(), http.StatusInternalServerError)
+	//return
+	//}
 	//Получаем cookie пользователя.
 	userid, err := r.Cookie("shortener")
 	if err != nil {
@@ -296,10 +297,9 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	var hashSlice []string
 	//Так как ожидаем в теле запроса массив строк [ "a", "b", "c", "d", ...]
 	//парсим запрос и записываем результат в массив для разбора
-	err = json.Unmarshal(body, &hashSlice)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	scanner := bufio.NewScanner(r.Body)
+	for scanner.Scan() {
+		hashSlice = append(hashSlice, scanner.Text())
 	}
 	//В отдельной горутине запускаем процесс удаления.
 	//Передаем горутине список и cookie
