@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -52,7 +52,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
@@ -75,7 +75,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -95,7 +95,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
@@ -193,7 +193,7 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		var short repository.ShortURL
 		err = json.Unmarshal(body, &short)

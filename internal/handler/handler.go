@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -66,7 +66,7 @@ func newServerHandler(s repository.Storager, c *config.Config) *ServerHandler {
 // и возвращает ответ с кодом 201 и сокращённым URL в виде текстовой строки в теле.
 func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	//Читаем тело и проверяем ошибку.
-	textURL, err := ioutil.ReadAll(r.Body)
+	textURL, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -129,7 +129,7 @@ func (h ServerHandler) FullURLHashBy(w http.ResponseWriter, r *http.Request) {
 // и возвращает JSONс сокращенным URL
 func (h ServerHandler) ShortURLJSONBy(w http.ResponseWriter, r *http.Request) {
 	//Читаем тело запроса
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -222,7 +222,7 @@ func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 // (correlation_id + original_url) и возвращет массив с JSON c (correlation_id + short_url)
 func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 	//Читаем тело запроса.
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -280,7 +280,7 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 //с идентификаторами сокращенных URL (hash),запускает асинхронный процесс удаления этих URL.
 func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	//Читаем тело запроса.
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
