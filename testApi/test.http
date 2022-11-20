@@ -49,8 +49,17 @@ http://localhost:8080/thirdurlposting
 
 ###
 
+DELETE  http://localhost:8080/api/user/urls HTTP/1.1
+content-type: text/plain
 
-GET  http://localhost:8080/46548a HTTP/1.1
+["2db7d4","443f9f"]
+
+
+
+###
+
+
+GET  http://localhost:8080/b24916 HTTP/1.1
 @no-redirect
 
 # 200 (OK)
@@ -58,7 +67,7 @@ GET  http://localhost:8080/46548a HTTP/1.1
 
 ###
 
-GET  http://localhost:8080/46548a HTTP/1.1
+GET  http://localhost:8080/b24916 HTTP/1.1
 
 # 200 (OK)
 # 404 (Not Found)

@@ -165,7 +165,7 @@ func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedU
 	//Подготавливаем/выполняем запрос базе данных.
 	str := `SELECT "hash", "url" FROM "shortener" WHERE "userid" = $1 AND "delete" = false`
 	rows, err := d.DB.QueryContext(ctx, str, userid)
-	//Проверяем обе! ошибки.
+	//Проверяем обе ошибки.
 	if err != nil || rows.Err() != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (d *Database) Delete(ctx context.Context, shortURL []string, userID string)
 	}
 	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
-	str := `UPDATE "shortener" SET "delete"=true WHERE "hash" = any ($1) and "userid" = $2`
+	str := `UPDATE "shortener" SET "delete" = true WHERE "hash" = any ($1) and "userid" = $2`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		return err

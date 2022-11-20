@@ -52,11 +52,11 @@ type ShortBatch struct {
 	Short string `json:"short_url"`
 }
 
-// ErrConflictInsert - ошибка,показывающая что сохраняемый URL уже есть в базе данных.
+// ErrConflictInsert - ошибка, показывающая, что сохраняемый URL уже есть в базе данных.
 var ErrConflictInsert error = errors.New("URL is exist")
 
-// ErrNotFoundURL - ошибка,показывающая что запрашиваемый URL нет в базе данных.
+// ErrNotFoundURL - ошибка,показывающая , что запрашиваемый URL нет в базе данных.
 var ErrNotFoundURL error = errors.New("URL not found in DB")
 
-// ErrDeletedURL - ошибка,показывающая что запрашиваемый URL нет удален из БД.
+// ErrDeletedURL - ошибка,показывающая , что запрашиваемый URL нет удален из БД.
 var ErrDeletedURL error = errors.New("URL is delete")
