@@ -7,15 +7,10 @@ content-type: application/json
 
 ###
 
-POST http://localhost:8080/api/shorten/batch HTTP/1.1
+POST http://localhost:8080/api/shorten HTTP/1.1
 content-type: application/json
 
-[
-  {
-    "correlation_id": "<строковый идентификатор>",
-    "original_url": "<URL для сокращения>"
-  }
-]
+{"url":"test.test/http1"}
 
 
 ###
@@ -52,14 +47,14 @@ http://localhost:8080/thirdurlposting
 DELETE  http://localhost:8080/api/user/urls HTTP/1.1
 content-type: text/plain
 
-["2db7d4","443f9f"]
+["8cfc0d"]
 
 
 
 ###
 
 
-GET  http://localhost:8080/b24916 HTTP/1.1
+GET  http://localhost:8080/2cd23f HTTP/1.1
 @no-redirect
 
 # 200 (OK)
@@ -67,7 +62,7 @@ GET  http://localhost:8080/b24916 HTTP/1.1
 
 ###
 
-GET  http://localhost:8080/b24916 HTTP/1.1
+GET  http://localhost:8080/8cfc0d HTTP/1.1
 
 # 200 (OK)
 # 404 (Not Found)
