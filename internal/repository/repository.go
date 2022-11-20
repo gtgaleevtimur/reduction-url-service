@@ -178,34 +178,34 @@ func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL,
 // Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
 func (s *Storage) Delete(_ context.Context, shortURL []string, userID string) error {
 	//Блокируем хранилище на время выполнения операции.
-	/*	s.Lock()
-		defer s.Unlock()
-		//Итерируемся по массиву с hash
-		for _, hash := range shortURL {
-			// Проверяем что userID URL в базе данных с таким hash соответствует userID, сделавшему запрос
-			if s.Data[hash].UserID == userID {
-				//Применяем изменения.
-				s.Data[hash] = URL{
-					UserID: userID,
+	s.Lock()
+	defer s.Unlock()
+	//Итерируемся по массиву с hash
+	for _, hash := range shortURL {
+		// Проверяем что userID URL в базе данных с таким hash соответствует userID, сделавшему запрос
+		if s.Data[hash].UserID == userID {
+			//Применяем изменения.
+			s.Data[hash] = URL{
+				UserID: userID,
+				FURL:   s.Data[hash].FURL,
+				Delete: true,
+			}
+			//Если задан файл для резервного хранения, то пишем так же туда.
+			if s.FileRecover != nil {
+				URLItem := NodeURL{
+					Hash:   hash,
 					FURL:   s.Data[hash].FURL,
+					UserID: userID,
 					Delete: true,
 				}
-				//Если задан файл для резервного хранения, то пишем так же туда.
-				if s.FileRecover != nil {
-					URLItem := NodeURL{
-						Hash:   hash,
-						FURL:   s.Data[hash].FURL,
-						UserID: userID,
-						Delete: true,
-					}
-					//Записываем.
-					err := s.FileRecover.Writer.Write(&URLItem)
-					if err != nil {
-						return err
-					}
+				//Записываем.
+				err := s.FileRecover.Writer.Write(&URLItem)
+				if err != nil {
+					return err
 				}
 			}
-		}*/
+		}
+	}
 	return nil
 }
 
