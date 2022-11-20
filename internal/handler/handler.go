@@ -301,7 +301,7 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//В отдельной горутине запускаем процесс удаления
+	//В отдельной горутине запускаем процесс удаления.
 	//Передаем горутине список и cookie
 	go h.Storage.Delete(r.Context(), hashSlice, userid.Value)
 	//Пишем ответ.

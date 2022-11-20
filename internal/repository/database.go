@@ -194,7 +194,7 @@ func (d *Database) Ping(ctx context.Context) error {
 	return d.DB.PingContext(ctx)
 }
 
-// Delete - метод ,который данные помечает как удаленные по их hash(идентификатор).
+// Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
 func (d *Database) Delete(ctx context.Context, shortURL []string, userID string) error {
 	//Задаем контекст на основе переданного из запроса
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
