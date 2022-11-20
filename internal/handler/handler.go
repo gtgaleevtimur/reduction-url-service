@@ -82,7 +82,7 @@ func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	//Передаем полученные значения для обработки в хранилище/получаем hash сокращенного url.
 	hash, err := h.Storage.InsertURL(r.Context(), string(textURL), userID.Value)
 	if err != nil {
-		//Проверяем ошибку на соответсвие ситуации,когда вносимый URL уже в базе данных.
+		//Проверяем ошибку на соответсвие ситуации, когда вносимый URL уже в базе данных.
 		if errors.Is(err, repository.ErrConflictInsert) {
 			statusCode = http.StatusConflict
 		} else {
@@ -294,7 +294,7 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	}
 	//Создаем массив для разбора тела запроса
 	var hashSlice []string
-	//Так как ожидаем JSON в теле запроса в виде {[ "a", "b", "c", "d", ...]}
+	//Так как ожидаем в теле запроса массив строк [ "a", "b", "c", "d", ...]
 	//парсим запрос и записываем результат в массив для разбора
 	err = json.Unmarshal(body, &hashSlice)
 	if err != nil {

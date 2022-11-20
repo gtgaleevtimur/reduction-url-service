@@ -41,7 +41,7 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string, userID string) 
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
 	//Проверяем есть ли в хранилище такой url.
 	okHash, err := s.GetShortURL(ctx, fullURL)
-	//Если нет,то вставляем новые данные.
+	//Если нет, то вставляем новые данные.
 	if err != nil {
 		err = s.saveData(ctx, fullURL, userID, hash)
 		if err != nil {
@@ -50,7 +50,7 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string, userID string) 
 		//Возвращаем сгенерированный hash.
 		return hash, nil
 	}
-	//Если есть , возвращаем hash и ошибку.
+	//Если есть, возвращаем hash и ошибку.
 	return okHash, ErrConflictInsert
 }
 
