@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"io"
@@ -280,13 +279,13 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 // DeleteBatch - обработчик эндпоинта DELETE /api/user/urls , принимает в теле запроса JSON ,
 //с идентификаторами сокращенных URL (hash),запускает асинхронный процесс удаления этих URL.
 func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
-	//Читаем тело запроса.
-	//body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
-	//if err != nil {
-	//http.Error(w, err.Error(), http.StatusInternalServerError)
-	//return
-	//}
+	//Читаем тело запроса.
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	//Получаем cookie пользователя.
 	userid, err := r.Cookie("shortener")
 	if err != nil {
@@ -297,9 +296,10 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	var hashSlice []string
 	//Так как ожидаем в теле запроса массив строк [ "a", "b", "c", "d", ...]
 	//парсим запрос и записываем результат в массив для разбора
-	scanner := bufio.NewScanner(r.Body)
-	for scanner.Scan() {
-		hashSlice = append(hashSlice, scanner.Text())
+	err = json.Unmarshal(body, &hashSlice)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	//В отдельной горутине запускаем процесс удаления.
 	//Передаем горутине список и cookie
