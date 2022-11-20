@@ -155,7 +155,7 @@ func (h ServerHandler) ShortURLJSONBy(w http.ResponseWriter, r *http.Request) {
 	//которая возвращает хэш сохраненного URL.
 	sURL.Short, err = h.Storage.InsertURL(r.Context(), full.Full, userid.Value)
 	if err != nil {
-		//Проверяем ошибку на соответсвие ситуации,когда вносимый URL уже в базе данных.
+		//Проверяем ошибку на соответсвие ситуации, когда вносимый URL уже в базе данных.
 		if errors.Is(err, repository.ErrConflictInsert) {
 			statusCode = http.StatusConflict
 		} else {

@@ -25,7 +25,7 @@ func NewStorage(c *config.Config) Storager {
 		Data: make(map[string]URL),
 	}
 
-	//Проверяем задан ли FILE_STORAGE_PATH,если да,то восстанавливаем данные оттуда.
+	//Проверяем задан ли FILE_STORAGE_PATH, если да, то восстанавливаем данные оттуда.
 	err := s.LoadRecoveryStorage(c.StoragePath)
 	if err != nil {
 		log.Println(err)
@@ -159,7 +159,7 @@ func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL,
 	result := make([]SlicedURL, 0)
 	//Итерируемся по хранилищу
 	for hash, url := range s.Data {
-		//Если нашли совпадение userID,то добавляем в массив данные.
+		//Если нашли совпадение userID, то добавляем в массив данные.
 		if url.UserID == userid && !url.Delete {
 			result = append(result, SlicedURL{
 				Short: hash,
