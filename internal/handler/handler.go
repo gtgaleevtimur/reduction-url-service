@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -301,11 +303,37 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	workersCount := 3
+	taskCount := len(hashSlice)
+
+	tasks := make(chan repository.Task, taskCount)
+	defer close(tasks)
+
+	for i := 0; i < workersCount; i++ {
+		go h.worker(tasks)
+	}
+
+	for j := 0; j < taskCount; j++ {
+		item := repository.Task{
+			UserID: userid.Value,
+			Hash:   hashSlice[j],
+		}
+		tasks <- item
+	}
 	//В отдельной горутине запускаем процесс удаления.
 	//Передаем горутине список и cookie
-	go h.Storage.Delete(r.Context(), hashSlice, userid.Value)
+	//go h.Storage.Delete(r.Context(), hashSlice, userid.Value)
 	//Пишем ответ.
 	w.WriteHeader(http.StatusAccepted)
+}
+
+// Helper-метод worker используемый для удаления URL.
+func (h ServerHandler) worker(tasks <-chan repository.Task) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	for j := range tasks {
+		h.Storage.Delete(ctx, j.Hash, j.UserID)
+	}
 }
 
 // NotFound - обработчик неподдерживаемых маршрутов.

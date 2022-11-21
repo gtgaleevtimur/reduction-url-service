@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"github.com/lib/pq"
 	"time"
 
 	_ "github.com/jackc/pgx/stdlib"
@@ -195,10 +194,7 @@ func (d *Database) Ping(ctx context.Context) error {
 }
 
 // Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
-func (d *Database) Delete(ctx context.Context, shortURL []string, userID string) error {
-	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
+func (d *Database) Delete(ctx context.Context, shortURL string, userID string) error {
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
@@ -206,14 +202,14 @@ func (d *Database) Delete(ctx context.Context, shortURL []string, userID string)
 	}
 	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
-	str := `UPDATE "shortener" SET "delete" = true WHERE "hash" = any ($1) and "userid" = $2`
+	str := `UPDATE "shortener" SET "delete" = true WHERE "hash" = $1 and "userid" = $2`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		return err
 	}
 	defer st.Close()
 	//Выполняем транзакцию, передавая драйверу массив с идентификаторами URL.
-	if _, err = st.ExecContext(ctx, pq.Array(shortURL), userID); err != nil {
+	if _, err = st.ExecContext(ctx, shortURL, userID); err != nil {
 		return err
 	}
 	//Возвращаем результат транзакции.
