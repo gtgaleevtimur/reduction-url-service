@@ -327,7 +327,7 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-// Helper-метод worker используемый для удаления URL.
+// worker-helper метод используемый для удаления URL.
 func (h ServerHandler) worker(tasks <-chan repository.Task) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
