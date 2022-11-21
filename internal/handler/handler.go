@@ -177,7 +177,7 @@ func (h ServerHandler) ShortURLJSONBy(w http.ResponseWriter, r *http.Request) {
 	w.Write(respBody)
 }
 
-// GetAllUserURLs - обработчик эндпоинта POST /api/shorten/batch, считывая userid из cookie возвращает все URL
+// GetAllUserURLs - обработчик эндпоинта GET /api/user/urls, считывая userid из cookie возвращает все URL
 // сохраненные пользователем.
 func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
 	//Считываем cookie пользователя.

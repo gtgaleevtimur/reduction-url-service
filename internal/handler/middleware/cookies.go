@@ -29,13 +29,13 @@ func CookiesMiddleware(next http.Handler) http.Handler {
 			h.Write(userCookieByte)
 			//Создаем подпись для проверки.
 			sign := h.Sum(nil)
-			//Проверяем на подлинность полученную подписанную cookie.
+			//Проверяем на подлинность подписанную cookie.
 			if hmac.Equal(userCookieByte, sign) {
 				next.ServeHTTP(w, r)
 				return
 			}
 		}
-		//Если cookie нет или проверка на подлинность не пройдена,создаем новую cookie.
+		//Если cookie нет или проверка на подлинность не пройдена, создаем новую cookie.
 		//Генерация userID.
 		userID, err := generateRandom(16)
 		if err != nil {

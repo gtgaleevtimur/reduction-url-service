@@ -65,7 +65,7 @@ func (d *Database) Connect(conf *config.Config) (err error) {
 func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, error) {
 	var hash string
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	//Готовим SQL запрос и выполняем.
 	str := `SELECT "hash" FROM "shortener" WHERE "url" = $1 AND "delete" = false`
@@ -82,7 +82,7 @@ func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) 
 	var fullURL string
 	var del bool
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	//Готовим SQL запрос и выполняем.
 	str := `SELECT "url", "delete" FROM "shortener" WHERE "hash" = $1`
@@ -105,7 +105,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 		return errors.New("ErrNoEmptyInsert")
 	}
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
@@ -156,7 +156,7 @@ func (d *Database) InsertURL(ctx context.Context, fullURL string, userID string)
 // GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error) {
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	//Объявляем переменные и массив с результатом.
 	var hash string
@@ -189,7 +189,7 @@ func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedU
 // Ping - возвращает ответ от БД Ping.
 func (d *Database) Ping(ctx context.Context) error {
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	return d.DB.PingContext(ctx)
 }
@@ -197,7 +197,7 @@ func (d *Database) Ping(ctx context.Context) error {
 // Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
 func (d *Database) Delete(ctx context.Context, shortURL []string, userID string) error {
 	//Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
