@@ -303,16 +303,18 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	workersCount := 3
+	//настраиваем асинхронный воркеров
+	workersCount := 5
 	taskCount := len(hashSlice)
 
+	//инициализируем канал
 	tasks := make(chan repository.Task, taskCount)
 	defer close(tasks)
-
+	//создаем волкеров
 	for i := 0; i < workersCount; i++ {
 		go h.worker(tasks)
 	}
-
+	//передаем задачи воркерам через канал
 	for j := 0; j < taskCount; j++ {
 		item := repository.Task{
 			UserID: userid.Value,
