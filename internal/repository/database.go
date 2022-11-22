@@ -90,7 +90,7 @@ func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) 
 		return "", err
 	}
 	//Если URL удален возвращаем соответствующую ошибку.
-	if del {
+	if del == true {
 		return "", ErrDeletedURL
 	}
 	//Возвращем original_url, если не было ошибки.
@@ -111,7 +111,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 	if err != nil {
 		return err
 	}
-	//defer tr.Rollback()
+	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
 	str := `INSERT INTO "shortener"("hash","url","userid","delete")VALUES ($1,$2,$3,false)`
 	st, err := tr.Prepare(str)
@@ -200,7 +200,7 @@ func (d *Database) Delete(ctx context.Context, shortURL string, userID string) e
 	if err != nil {
 		return err
 	}
-	//defer tr.Rollback()
+	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
 	str := `UPDATE "shortener" SET "delete" = true WHERE "hash" = ($1) and "userid" = ($2)`
 	st, err := tr.Prepare(str)
