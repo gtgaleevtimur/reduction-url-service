@@ -1,16 +1,13 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"io"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	mw "github.com/gtgaleevtimur/reduction-url-service/internal/handler/middleware"
@@ -331,10 +328,8 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 
 // worker-helper метод используемый для удаления URL.
 func (h ServerHandler) worker(tasks <-chan repository.Task) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
 	for j := range tasks {
-		h.Storage.Delete(ctx, j.Hash, j.UserID)
+		h.Storage.Delete(j.Hash, j.UserID)
 	}
 }
 
