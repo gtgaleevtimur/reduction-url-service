@@ -85,12 +85,12 @@ func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	hash, err := h.Storage.InsertURL(r.Context(), string(textURL), userID.Value)
 	if err != nil {
 		//Проверяем ошибку на соответсвие ситуации, когда вносимый URL уже в базе данных.
-		//if errors.Is(err, repository.ErrConflictInsert) {
-		//statusCode = http.StatusConflict
-		//	} else {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-		//}
+		if errors.Is(err, repository.ErrConflictInsert) {
+			statusCode = http.StatusConflict
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 	//Создаем сокращенный url для возврата пользователю.
 	exShortURL := h.Conf.ExpShortURL(hash)

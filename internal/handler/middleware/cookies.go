@@ -29,7 +29,7 @@ func CookiesMiddleware(next http.Handler) http.Handler {
 			h.Write(userCookieByte)
 			//Создаем подпись для проверки.
 			sign := h.Sum(nil)
-			//Проверяем на подлинность подписанную cookie.
+			//Проверяем на подлинность подписанной cookie.
 			if hmac.Equal(userCookieByte, sign) {
 				next.ServeHTTP(w, r)
 				return
