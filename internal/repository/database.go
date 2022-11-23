@@ -194,7 +194,7 @@ func (d *Database) Ping(ctx context.Context) error {
 }
 
 // Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
-func (d *Database) Delete(shortURL string, userID string) error {
+func (d *Database) Delete(ctx context.Context, shortURL string, userID string) error {
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
@@ -209,7 +209,7 @@ func (d *Database) Delete(shortURL string, userID string) error {
 	}
 	defer st.Close()
 	//Выполняем транзакцию.
-	if _, err = st.Exec(shortURL, userID); err != nil {
+	if _, err = st.ExecContext(ctx, shortURL, userID); err != nil {
 		return err
 	}
 	//Возвращаем результат транзакции.

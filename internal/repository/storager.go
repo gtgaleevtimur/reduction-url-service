@@ -12,7 +12,7 @@ type Storager interface {
 	saveData(ctx context.Context, fullURL string, userid string, hash string) error
 	InsertURL(ctx context.Context, fURL string, userID string) (string, error)
 	GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error)
-	Delete(userID string, shortURL string) error
+	Delete(ctx context.Context, userID string, shortURL string) error
 	Ping(ctx context.Context) error
 }
 type Task struct {
