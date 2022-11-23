@@ -55,7 +55,7 @@ func CookiesMiddleware(next http.Handler) http.Handler {
 		}
 		aesblock.Encrypt(authCookie, append(userID, nonce...))
 		cookie := &http.Cookie{
-			Name: "userid", Value: hex.EncodeToString(authCookie), Expires: time.Now().AddDate(1, 0, 0),
+			Name: "shortener", Value: hex.EncodeToString(authCookie), Expires: time.Now().AddDate(1, 0, 0),
 		}
 		//	вставляем cookie в response и в request
 		http.SetCookie(w, cookie)
