@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -294,6 +295,7 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	var wg sync.WaitGroup
 	//Создаем массив для разбора тела запроса
 	var hashSlice []string
 	//Так как ожидаем в теле запроса массив строк [ "a", "b", "c", "d", ...]
@@ -312,7 +314,8 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	defer close(tasks)
 	//создаем волкеров
 	for i := 0; i < workersCount; i++ {
-		go h.worker(tasks)
+		wg.Add(1)
+		go h.worker(&wg, tasks)
 	}
 	//передаем задачи воркерам через канал
 	for j := 0; j < taskCount; j++ {
@@ -327,10 +330,12 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	//go h.Storage.Delete(r.Context(), hashSlice, userid.Value)
 	//Пишем ответ.
 	w.WriteHeader(http.StatusAccepted)
+	wg.Wait()
 }
 
 // worker-helper метод используемый для удаления URL.
-func (h ServerHandler) worker(tasks <-chan repository.Task) {
+func (h ServerHandler) worker(wg *sync.WaitGroup, tasks <-chan repository.Task) {
+	defer wg.Done()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	for j := range tasks {

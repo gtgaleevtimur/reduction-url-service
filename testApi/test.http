@@ -55,7 +55,7 @@ DELETE  http://localhost:8080/api/user/urls HTTP/1.1
 content-type: text/plain
 Set-Cookie: shortener=ef5255ff2829f5b984415742ab7bcecc7e00023c37561d1ece8df10e7eac0c10
 
-["6a4c00","ea06f7"]
+["150471"]
 
 
 
@@ -77,8 +77,8 @@ GET  http://localhost:8080/ea06f7 HTTP/1.1
 
 ###
 
-GET  http://localhost:8080/info/69b56c HTTP/1.1
-
+GET  http://localhost:8080/api/user/urls HTTP/1.1
+Set-Cookie: shortener=e1cc308f0cf79fd6af70e2ef4a026b4c41e5ce6e37b04d89c70620c27925baa2
 ###
 
 
