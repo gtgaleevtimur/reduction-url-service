@@ -9,6 +9,7 @@ content-type: application/json
 
 POST http://localhost:8080/api/shorten HTTP/1.1
 content-type: application/json
+Set-Cookie: shortener = b5d12a59ec3741f0a5bf9d00b01b8975bf65e0f1e163639d6625b7556d1b31a9
 
 {"url":"test.test/http1"}
 
@@ -17,6 +18,7 @@ content-type: application/json
 
 POST http://localhost:8080/ HTTP/1.1
 content-type: text/plain
+Set-Cookie: shortener = b5d12a59ec3741f0a5bf9d00b01b8975bf65e0f1e163639d6625b7556d1b31a9
 
 http://test.test/http
 
@@ -78,7 +80,7 @@ GET  http://localhost:8080/ea06f7 HTTP/1.1
 ###
 
 GET  http://localhost:8080/api/user/urls HTTP/1.1
-Set-Cookie: shortener=e1cc308f0cf79fd6af70e2ef4a026b4c41e5ce6e37b04d89c70620c27925baa2
+Set-Cookie: shortener = b5d12a59ec3741f0a5bf9d00b01b8975bf65e0f1e163639d6625b7556d1b31a9
 ###
 
 
