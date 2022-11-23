@@ -70,6 +70,7 @@ func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error)
 func (s *Storage) GetFullURL(_ context.Context, shortURL string) (string, error) {
 	s.Lock()
 	defer s.Unlock()
+	//Проверяем наличие URL в БД.
 	if val, ok := s.Data[shortURL]; ok {
 		//Если URL удален возвращаем соответствующую ошибку.
 		if val.Delete {
