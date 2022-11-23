@@ -111,7 +111,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 	if err != nil {
 		return err
 	}
-	//defer tr.Rollback()
+	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
 	str := `INSERT INTO "shortener"("hash","url","userid","delete")VALUES ($1,$2,$3,false)`
 	st, err := tr.Prepare(str)
@@ -200,7 +200,7 @@ func (d *Database) Delete(ctx context.Context, shortURL string, userID string) e
 	if err != nil {
 		return err
 	}
-	//	defer tr.Rollback()
+	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
 	str := `UPDATE "shortener" SET "delete" = true WHERE "hash" = ($1) and "userid" = ($2)`
 	st, err := tr.Prepare(str)
@@ -208,7 +208,7 @@ func (d *Database) Delete(ctx context.Context, shortURL string, userID string) e
 		return err
 	}
 	defer st.Close()
-	//Выполняем транзакцию, передавая драйверу массив с идентификаторами URL.
+	//Выполняем транзакцию.
 	if _, err = st.ExecContext(ctx, shortURL, userID); err != nil {
 		return err
 	}

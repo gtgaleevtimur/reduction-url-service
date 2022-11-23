@@ -45,7 +45,6 @@ http://localhost:8080/thirdurlposting
 ###
 
 GET http://localhost:8080/api/user/urls HTTP/1.1
-Set-Cookie: shortener=4fbf94555cfa133369c512d2db72b1162e93e206d07e6fc2aeeabcf5d21807d2
 
 
 
@@ -54,8 +53,9 @@ Set-Cookie: shortener=4fbf94555cfa133369c512d2db72b1162e93e206d07e6fc2aeeabcf5d2
 
 DELETE  http://localhost:8080/api/user/urls HTTP/1.1
 content-type: text/plain
+Set-Cookie: shortener=ef5255ff2829f5b984415742ab7bcecc7e00023c37561d1ece8df10e7eac0c10
 
-["69b56c"]
+["6a4c00","ea06f7"]
 
 
 
@@ -70,7 +70,7 @@ GET  http://localhost:8080/2cd23f HTTP/1.1
 
 ###
 
-GET  http://localhost:8080/8cfc0d HTTP/1.1
+GET  http://localhost:8080/ea06f7 HTTP/1.1
 
 # 200 (OK)
 # 404 (Not Found)
