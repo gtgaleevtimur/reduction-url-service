@@ -116,14 +116,14 @@ func TestStorage_GetFullURL(t *testing.T) {
 			if !tt.wantErr {
 				res, err := db.InsertURL(context.Background(), tt.fullURL, tt.userID)
 				require.NoError(t, err)
-				got, flag := db.GetFullURL(context.Background(), res)
-				assert.Equal(t, 2, flag)
+				got, err := db.GetFullURL(context.Background(), res)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.want, got)
 			}
 			if tt.wantErr {
-				got, flag := db.GetFullURL(context.Background(), tt.shortURL)
+				got, err := db.GetFullURL(context.Background(), tt.shortURL)
 				assert.Equal(t, tt.want, got)
-				assert.Equal(t, 0, flag)
+				assert.Error(t, err)
 			}
 		})
 	}
