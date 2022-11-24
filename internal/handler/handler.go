@@ -97,7 +97,7 @@ func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	//Формируем ответ.
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(statusCode)
-	w.Write([]byte(exShortURL))
+	w.Write([]byte(exShortURL + "as"))
 }
 
 // FullURLHashBy -обработчик эндпоинта GET /{id} ,принимает в качестве URL-параметра идентификатор сокращённого URL
