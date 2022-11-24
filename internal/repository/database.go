@@ -214,7 +214,7 @@ func (d *Database) Delete(hashes []string, userID string) error {
 	}
 	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
-	str := `UPDATE shortener SET is_deleted = true WHERE hashid = any $1 and userid = $2`
+	str := `UPDATE shortener SET is_deleted = true WHERE hashid = any ($1) and userid = $2`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		log.Info().Msg("Error in tr.Prepare Delete")
