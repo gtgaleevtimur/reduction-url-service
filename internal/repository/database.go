@@ -77,7 +77,7 @@ func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, err
 }
 
 // GetFullURL - метод, возвращающий original_url по его hash.
-func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) {
+func (d *Database) GetFullURL(ctx context.Context, hash string) (string, int) {
 	var fullURL string
 	var del bool
 	//Задаем контекст на основе переданного из запроса
@@ -86,15 +86,16 @@ func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) 
 	//Готовим SQL запрос и выполняем.
 	str := `SELECT "url", "delete" FROM "shortener" WHERE "hash" = ($1)`
 	err := d.DB.QueryRowContext(ctx, str, hash).Scan(&fullURL, &del)
-	if err != nil {
-		return "", err
+	//Если URL отсутствует в БД возвращаем соответствующую метку.
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", 0
 	}
-	//Если URL удален возвращаем соответствующую ошибку.
+	//Если URL удален возвращаем соответствующую метку.
 	if del {
-		return "", ErrDeletedURL
+		return "", 1
 	}
-	//Возвращем original_url, если не было ошибки.
-	return fullURL, nil
+	//Возвращем original_url.
+	return fullURL, 2
 }
 
 // InsertURL - метод, который сохраняет original_url,user_id и hash в базу данных.

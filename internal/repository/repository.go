@@ -67,20 +67,20 @@ func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error)
 }
 
 // GetFullURL - метод, возвращающий original_url по его hash.
-func (s *Storage) GetFullURL(_ context.Context, shortURL string) (string, error) {
+func (s *Storage) GetFullURL(_ context.Context, shortURL string) (string, int) {
 	s.Lock()
 	defer s.Unlock()
 	//Проверяем наличие URL в БД.
-	if val, ok := s.Data[shortURL]; ok {
-		//Если URL удален возвращаем соответствующую ошибку.
-		if val.Delete {
-			return "", ErrDeletedURL
-		}
-		//Иначе возвращаем hash запрашиваемого URL.
-		return val.FURL, nil
+	if _, ok := s.Data[shortURL]; !ok {
+		//Если URL отсутствует в БД возвращаем соответствующую метку.
+		return "", 0
 	}
-	//Возвращаем соответствующую ошибку если URL не найден.
-	return "", ErrNotFoundURL
+	//Если URL удален возвращаем соответствующую метку
+	if s.Data[shortURL].Delete {
+		return "", 1
+	}
+	//Возвращаем полный URL и метку.
+	return s.Data[shortURL].FURL, 2
 }
 
 // InsertURL - метод,заполняющий хранилище данными(полный url, id пользователя, hash).

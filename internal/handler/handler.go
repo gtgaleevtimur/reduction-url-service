@@ -110,21 +110,22 @@ func (h ServerHandler) FullURLHashBy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Запрашиваем оригинальный URL из базы данных.
-	fullURL, err := h.Storage.GetFullURL(r.Context(), shortURL)
-	if err != nil {
-		if errors.Is(err, repository.ErrDeletedURL) {
-			w.WriteHeader(http.StatusGone)
-			return
+	fullURL, flag := h.Storage.GetFullURL(r.Context(), shortURL)
+	switch flag {
+	case 0:
+		http.Error(w, "NotExistURL", http.StatusNotFound)
+		return
+	case 1:
+		w.WriteHeader(http.StatusGone)
+		return
+	case 2:
+		if !strings.HasPrefix(fullURL, config.HTTP) {
+			fullURL = config.HTTP + strings.TrimPrefix(fullURL, "//")
 		}
-		http.Error(w, err.Error(), http.StatusNotFound)
+		w.Header().Set("Location", fullURL)
+		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
 	}
-	//Формируем ответ
-	if !strings.HasPrefix(fullURL, config.HTTP) {
-		fullURL = config.HTTP + strings.TrimPrefix(fullURL, "//")
-	}
-	w.Header().Set("Location", fullURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 // ShortURLJSONBy - обработчик эндпоинта POST /api/shorten,принимает в теле запроса json с оригинальным URL

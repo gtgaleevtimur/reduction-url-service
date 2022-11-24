@@ -8,7 +8,7 @@ import (
 // Storager - интерфейс хранилища.
 type Storager interface {
 	GetShortURL(ctx context.Context, fullURL string) (string, error)
-	GetFullURL(ctx context.Context, shortURL string) (string, error)
+	GetFullURL(ctx context.Context, shortURL string) (string, int)
 	saveData(ctx context.Context, fullURL string, userid string, hash string) error
 	InsertURL(ctx context.Context, fURL string, userID string) (string, error)
 	GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error)
