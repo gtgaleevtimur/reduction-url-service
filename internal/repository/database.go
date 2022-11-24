@@ -85,7 +85,7 @@ func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	//Готовим SQL запрос и выполняем.
-	str := `SELECT url, delete FROM shortener WHERE hash = $1`
+	str := `SELECT url , delete FROM shortener WHERE hash = $1`
 	err := d.DB.QueryRowContext(ctx, str, hash).Scan(&fullURL, &del)
 	//Если URL отсутствует в БД возвращаем соответствующую ошибку.
 	if errors.Is(err, sql.ErrNoRows) {
@@ -115,7 +115,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 	}
 	//defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
-	str := `INSERT INTO shortener(hash,url,userid,delete)VALUES ($1,$2,$3,false)`
+	str := `INSERT INTO shortener(hash , url , userid , delete)VALUES ($1 , $2 , $3 , false)`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedU
 	var url string
 	result := make([]SlicedURL, 0)
 	//Подготавливаем/выполняем запрос базе данных.
-	str := `SELECT hash, url FROM shortener WHERE userid = $1 AND "delete" = false`
+	str := `SELECT hash , url FROM shortener WHERE userid = $1 AND delete = false`
 	rows, err := d.DB.QueryContext(ctx, str, userid)
 	//Проверяем обе ошибки.
 	if err != nil || rows.Err() != nil {
@@ -206,7 +206,7 @@ func (d *Database) Delete(hashes []string, userID string) error {
 	}
 	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
-	str := `UPDATE shortener SET delete = 1 WHERE hash = any $1 and userid = $2`
+	str := `UPDATE shortener SET delete = true WHERE hash = any $1 and userid = $2`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		return err

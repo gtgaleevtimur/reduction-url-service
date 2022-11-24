@@ -120,7 +120,6 @@ func (h ServerHandler) FullURLHashBy(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Location", fullURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
-
 }
 
 // ShortURLJSONBy - обработчик эндпоинта POST /api/shorten,принимает в теле запроса json с оригинальным URL
