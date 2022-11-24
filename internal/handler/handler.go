@@ -1,16 +1,13 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"io"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	mw "github.com/gtgaleevtimur/reduction-url-service/internal/handler/middleware"
@@ -296,47 +293,19 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Создаем массив для разбора тела запроса
-	var hashSlice []string
+	var hashes []string
 	//Так как ожидаем в теле запроса массив строк [ "a", "b", "c", "d", ...]
 	//парсим запрос и записываем результат в массив для разбора
-	err = json.Unmarshal(body, &hashSlice)
+	err = json.Unmarshal(body, &hashes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	//настраиваем асинхронный воркеров
-	workersCount := 5
-	taskCount := len(hashSlice)
-
-	//инициализируем канал
-	tasks := make(chan repository.Task, taskCount)
-	defer close(tasks)
-	//создаем волкеров
-	for i := 0; i < workersCount; i++ {
-		go h.worker(tasks)
-	}
-	//передаем задачи воркерам через канал
-	for j := 0; j < taskCount; j++ {
-		item := repository.Task{
-			UserID: userid.Value,
-			Hash:   hashSlice[j],
-		}
-		tasks <- item
-	}
 	//В отдельной горутине запускаем процесс удаления.
 	//Передаем горутине список и cookie
-	//go h.Storage.Delete(r.Context(), hashSlice, userid.Value)
+	go h.Storage.Delete(hashes, userid.Value)
 	//Пишем ответ.
 	w.WriteHeader(http.StatusAccepted)
-}
-
-// worker-helper метод используемый для удаления URL.
-func (h ServerHandler) worker(tasks <-chan repository.Task) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	for j := range tasks {
-		h.Storage.Delete(ctx, j.Hash, j.UserID)
-	}
 }
 
 // NotFound - обработчик неподдерживаемых маршрутов.

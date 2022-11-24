@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"github.com/lib/pq"
 	"time"
 
 	_ "github.com/jackc/pgx/stdlib"
@@ -195,7 +196,9 @@ func (d *Database) Ping(ctx context.Context) error {
 }
 
 // Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
-func (d *Database) Delete(ctx context.Context, shortURL string, userID string) error {
+func (d *Database) Delete(hashes []string, userID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
@@ -210,7 +213,7 @@ func (d *Database) Delete(ctx context.Context, shortURL string, userID string) e
 	}
 	defer st.Close()
 	//Выполняем транзакцию.
-	if _, err = st.ExecContext(ctx, shortURL, userID); err != nil {
+	if _, err = st.ExecContext(ctx, pq.Array(hashes), userID); err != nil {
 		return err
 	}
 	//Возвращаем результат транзакции.
