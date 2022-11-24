@@ -15,10 +15,6 @@ type Storager interface {
 	Delete(userID []string, shortURL string) error
 	Ping(ctx context.Context) error
 }
-type Task struct {
-	UserID string
-	Hash   string
-}
 
 type NodeURL struct {
 	Hash   string `json:"hash"`
