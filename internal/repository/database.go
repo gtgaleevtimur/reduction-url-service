@@ -10,8 +10,8 @@ import (
 	"time"
 
 	//_ "github.com/mattn/go-sqlite3"
-	_ "github.com/jackc/pgx/stdlib"
-	"github.com/lib/pq"
+	_ "github.com/jackc/pgx/v4/stdlib"
+
 	"github.com/rs/zerolog/log"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
@@ -209,29 +209,25 @@ func (d *Database) Delete(hashes []string, userID string) error {
 	tr, err := d.DB.Begin()
 	if err != nil {
 		log.Info().Msg("Error in tr.Begin Delete")
-		log.Info().Err(err)
 		return err
 	}
 	defer tr.Rollback()
 	//Подготавливаем стейтмент для БД.
-	str := `UPDATE shortener SET is_deleted = true WHERE hashid = any ($1) and userid = $2`
+	str := `update shortener set is_deleted=true WHERE hashid = any ($1) and userid = $2`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		log.Info().Msg("Error in tr.Prepare Delete")
-		log.Info().Err(err)
 		return err
 	}
 	defer st.Close()
 	//Выполняем транзакцию.
-	if _, err = st.ExecContext(ctx, pq.Array(hashes), userID); err != nil {
+	if _, err = st.ExecContext(ctx, hashes, userID); err != nil {
 		log.Info().Msg("Error in tr.Exec Delete")
-		log.Info().Err(err)
 		return err
 	}
 	//Возвращаем результат транзакции.
 	if err = tr.Commit(); err != nil {
 		log.Info().Msg("Error in tr.Commit Delete")
-		log.Info().Err(err)
 	}
 	return tr.Commit()
 }

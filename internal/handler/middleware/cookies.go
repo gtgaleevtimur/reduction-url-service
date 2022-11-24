@@ -1,9 +1,8 @@
 package middleware
 
 import (
-	"crypto/hmac"
+	"crypto/aes"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"log"
 	"net/http"
@@ -14,44 +13,33 @@ import (
 // Алгоритм подписи - sha.256.
 func CookiesMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//Ключ шифрования.
-		key := []byte("AsdFrGtHyJhjErTy")
-		//Проверка наличия cookie в запросе.
+		cookieBuf := make([]byte, aes.BlockSize)
+		key := []byte("HdUeLk85Gp0i7pLh")
+		nonce := []byte("cookie")
+		aesBlock, err := aes.NewCipher(key)
+		if err != nil {
+			log.Fatal(err)
+		}
 		if userCookie, err := r.Cookie("shortener"); err == nil {
-			//Расшифровка значения cookie в срез байт.
-			userCookieByte, err := hex.DecodeString(userCookie.Value)
+			requestUserIDByte, err := hex.DecodeString(userCookie.Value)
 			if err != nil {
 				log.Printf("Cookie decoding: %v\n", err)
 			}
-			//Инициализируем алгоритм подписи HMAC.
-			h := hmac.New(sha256.New, key)
-			//Записываем в него полученое значение cookie.
-			h.Write(userCookieByte)
-			//Создаем подпись для проверки.
-			sign := h.Sum(nil)
-			//Проверяем на подлинность подписанную cookie.
-			if hmac.Equal(userCookieByte, sign) {
+			aesBlock.Decrypt(cookieBuf, requestUserIDByte)
+			if string(cookieBuf[len(cookieBuf)-len(nonce):]) == string(nonce) {
 				next.ServeHTTP(w, r)
 				return
 			}
 		}
-		//Если cookie нет или проверка на подлинность не пройдена, создаем новую cookie.
-		//Генерация userID.
-		userID, err := generateRandom(16)
+		userID, err := generateRandom(10)
 		if err != nil {
 			log.Printf("UserID generate: %v\n", err)
 		}
-		//Инициализируем алгоритм подписи HMAC.
-		h := hmac.New(sha256.New, key)
-		//Пишем в него сгенерированный userid.
-		h.Write(userID)
-		//Генерируем подписанную cookie.
-		cook := h.Sum(nil)
-		//Создаем cookie и передаем ее в ответ и запрос.
+		aesBlock.Encrypt(cookieBuf, append(userID, nonce...))
 		cookie := &http.Cookie{
-			Name:    "shortener",
-			Value:   hex.EncodeToString(cook),
+			Name: "shortener", Value: hex.EncodeToString(cookieBuf),
 			Expires: time.Now().Add(time.Hour * 24),
+			Path:    `/`,
 		}
 		http.SetCookie(w, cookie)
 		r.AddCookie(cookie)
