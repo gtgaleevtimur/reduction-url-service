@@ -6,12 +6,12 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"github.com/lib/pq"
 	"sync"
 	"time"
 
-	//_ "github.com/jackc/pgx/stdlib"
-	_ "github.com/mattn/go-sqlite3"
+	//_ "github.com/mattn/go-sqlite3"
+	_ "github.com/jackc/pgx/stdlib"
+	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
@@ -54,7 +54,7 @@ func (d *Database) Bootstrap() (err error) {
 
 // Connect - метод выполняет соединение с базой данных.
 func (d *Database) Connect(conf *config.Config) (err error) {
-	d.DB, err = sql.Open("sqlite3", conf.DatabaseDSN)
+	d.DB, err = sql.Open("pgx", conf.DatabaseDSN)
 	if err != nil {
 		return err
 	}
