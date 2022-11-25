@@ -9,10 +9,7 @@ import (
 	"sync"
 	"time"
 
-	//_ "github.com/mattn/go-sqlite3"
 	_ "github.com/jackc/pgx/v4/stdlib"
-
-	"github.com/rs/zerolog/log"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 )
@@ -208,7 +205,6 @@ func (d *Database) Delete(hashes []string, userID string) error {
 	//Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
-		log.Info().Msg("Error in tr.Begin Delete")
 		return err
 	}
 	defer tr.Rollback()
@@ -216,18 +212,13 @@ func (d *Database) Delete(hashes []string, userID string) error {
 	str := `update shortener set is_deleted=true WHERE hashid = any ($1) and userid = $2`
 	st, err := tr.Prepare(str)
 	if err != nil {
-		log.Info().Msg("Error in tr.Prepare Delete")
 		return err
 	}
 	defer st.Close()
 	//Выполняем транзакцию.
 	if _, err = st.ExecContext(ctx, hashes, userID); err != nil {
-		log.Info().Msg("Error in tr.Exec Delete")
 		return err
 	}
 	//Возвращаем результат транзакции.
-	if err = tr.Commit(); err != nil {
-		log.Info().Msg("Error in tr.Commit Delete")
-	}
 	return tr.Commit()
 }
