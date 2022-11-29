@@ -37,12 +37,11 @@ func NewDatabaseDSN(conf *config.Config) (Storager, error) {
 
 func (d *Database) Bootstrap() (err error) {
 	//Подготавливаем SQL запрос на создание таблицы, если ее нет.
-	table := `CREATE TABLE IF NOT EXISTS shortener (hashid TEXT UNIQUE PRIMARY KEY NOT NULL,
+	// Выполняем SQL запрос.
+	_, err = d.DB.Exec(`CREATE TABLE IF NOT EXISTS shortener (hashid TEXT UNIQUE PRIMARY KEY NOT NULL,
 													url TEXT UNIQUE NOT NULL,
 													userid TEXT NOT NULL,
-													is_deleted BOOLEAN NOT NULL)`
-	// Выполняем SQL запрос.
-	_, err = d.DB.Exec(table)
+													is_deleted BOOLEAN NOT NULL)`)
 	if err != nil {
 		return err
 	}
@@ -69,8 +68,7 @@ func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, err
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	// Готовим SQL запрос и выполняем.
-	str := `SELECT hashid FROM shortener WHERE url = $1 AND is_deleted = false`
-	err := d.DB.QueryRowContext(ctx, str, fullURL).Scan(&hash)
+	err := d.DB.QueryRowContext(ctx, `SELECT hashid FROM shortener WHERE url = $1 AND is_deleted = false`, fullURL).Scan(&hash)
 	if err != nil {
 		return "", err
 	}
@@ -86,8 +84,7 @@ func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	// Готовим SQL запрос и выполняем.
-	str := `SELECT url , is_deleted FROM shortener WHERE hashid = $1`
-	err := d.DB.QueryRowContext(ctx, str, hash).Scan(&fullURL, &del)
+	err := d.DB.QueryRowContext(ctx, `SELECT url , is_deleted FROM shortener WHERE hashid = $1`, hash).Scan(&fullURL, &del)
 	// Если URL отсутствует в БД возвращаем соответствующую ошибку.
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFoundURL
@@ -116,8 +113,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 	}
 	defer tr.Rollback()
 	// Подготавливаем стейтмент для БД.
-	str := `INSERT INTO shortener(hashid,url,userid,is_deleted)VALUES ($1,$2,$3,false)`
-	st, err := tr.Prepare(str)
+	st, err := tr.Prepare(`INSERT INTO shortener(hashid,url,userid,is_deleted)VALUES ($1,$2,$3,false)`)
 	if err != nil {
 		return err
 	}
@@ -165,8 +161,7 @@ func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedU
 	var url string
 	result := make([]SlicedURL, 0)
 	// Подготавливаем/выполняем запрос базе данных.
-	str := `SELECT hashid , url FROM shortener WHERE userid = $1 AND is_deleted = false`
-	rows, err := d.DB.QueryContext(ctx, str, userid)
+	rows, err := d.DB.QueryContext(ctx, `SELECT hashid , url FROM shortener WHERE userid = $1 AND is_deleted = false`, userid)
 	// Проверяем обе ошибки.
 	if err != nil || rows.Err() != nil {
 		return nil, err
@@ -209,8 +204,7 @@ func (d *Database) Delete(hashes []string, userID string) error {
 	}
 	defer tr.Rollback()
 	// Подготавливаем стейтмент для БД.
-	str := `update shortener set is_deleted=true WHERE hashid = any ($1) and userid = $2`
-	st, err := tr.Prepare(str)
+	st, err := tr.Prepare(`update shortener set is_deleted=true WHERE hashid = any ($1) and userid = $2`)
 	if err != nil {
 		return err
 	}
