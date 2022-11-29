@@ -64,9 +64,6 @@ func (d *Database) Connect(conf *config.Config) (err error) {
 // GetShortURL - метод, возвращающий hash сокращенного url.
 func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, error) {
 	var hash string
-	// Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
 	// Готовим SQL запрос и выполняем.
 	err := d.DB.QueryRowContext(ctx, `SELECT hashid FROM shortener WHERE url = $1 AND is_deleted = false`, fullURL).Scan(&hash)
 	if err != nil {
@@ -80,9 +77,6 @@ func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, err
 func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) {
 	var fullURL string
 	var del bool
-	// Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
 	// Готовим SQL запрос и выполняем.
 	err := d.DB.QueryRowContext(ctx, `SELECT url , is_deleted FROM shortener WHERE hashid = $1`, hash).Scan(&fullURL, &del)
 	// Если URL отсутствует в БД возвращаем соответствующую ошибку.
@@ -103,9 +97,6 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
 		return errors.New("ErrNoEmptyInsert")
 	}
-	// Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
 	// Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
@@ -153,9 +144,6 @@ func (d *Database) InsertURL(ctx context.Context, fullURL string, userID string)
 
 // GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error) {
-	// Задаем контекст на основе переданного из запроса
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
 	// Объявляем переменные и массив с результатом.
 	var hash string
 	var url string
@@ -192,11 +180,9 @@ func (d *Database) Ping(ctx context.Context) error {
 }
 
 // Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
-func (d *Database) Delete(hashes []string, userID string) error {
+func (d *Database) Delete(ctx context.Context, hashes []string, userID string) error {
 	d.Lock()
 	defer d.Unlock()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
-	defer cancel()
 	// Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {

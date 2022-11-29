@@ -177,7 +177,7 @@ func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL,
 }
 
 // Delete - метод, который данные помечает как удаленные по их hash(идентификатор).
-func (s *Storage) Delete(hashes []string, userID string) error {
+func (s *Storage) Delete(_ context.Context, hashes []string, userID string) error {
 	// Блокируем хранилище на время выполнения операции.
 	s.Lock()
 	defer s.Unlock()
