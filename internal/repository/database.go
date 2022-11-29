@@ -183,6 +183,9 @@ func (d *Database) Ping(ctx context.Context) error {
 func (d *Database) Delete(ctx context.Context, hashes []string, userID string) error {
 	d.Lock()
 	defer d.Unlock()
+	// Инициализируем контекст с таймаутом.
+	ctx, cancel := context.WithTimeout(ctx, time.Second*60)
+	defer cancel()
 	// Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
