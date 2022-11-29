@@ -297,7 +297,7 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 // с идентификаторами сокращенных URL (hash),запускает асинхронный процесс удаления этих URL.
 func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	// Инициализируем контекст
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 	defer r.Body.Close()
 	// Читаем тело запроса.
