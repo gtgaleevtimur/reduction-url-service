@@ -13,33 +13,33 @@ import (
 // Алгоритм подписи - AES.
 func CookiesMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//Инициализируем буфер-переменную куда будем кодировать-декодировать cookie.
+		// Инициализируем буфер-переменную куда будем кодировать-декодировать cookie.
 		cookieBuf := make([]byte, aes.BlockSize)
-		//Секретный ключ.
+		// Секретный ключ.
 		key := []byte("HdUeLk85Gp0i7pLh")
-		//Проверочное слово.
+		// Проверочное слово.
 		nonce := []byte("cookie")
-		//Интерфейс шифрования.
+		// Интерфейс шифрования.
 		aesBlock, err := aes.NewCipher(key)
 		if err != nil {
 			log.Fatal(err)
 		}
-		//Проверка наличия cookie.
+		// Проверка наличия cookie.
 		if userCookie, err := r.Cookie("shortener"); err == nil {
-			//Дешифровка cookie в строку.
+			// Дешифровка cookie в строку.
 			requestUserIDByte, err := hex.DecodeString(userCookie.Value)
 			if err != nil {
 				log.Printf("Cookie decoding: %v\n", err)
 			}
-			//Дешифровка строки интерфейсом шифрования.
+			// Дешифровка строки интерфейсом шифрования.
 			aesBlock.Decrypt(cookieBuf, requestUserIDByte)
-			//Проверка на подлинность.
+			// Проверка на подлинность.
 			if string(cookieBuf[len(cookieBuf)-len(nonce):]) == string(nonce) {
 				next.ServeHTTP(w, r)
 				return
 			}
 		}
-		//Если cookie не обнаружено или она не прошла проверку подлиности, создаем новую cookie.
+		// Если cookie не обнаружено или она не прошла проверку подлиности, создаем новую cookie.
 		userID, err := generateRandom(10)
 		if err != nil {
 			log.Printf("UserID generate: %v\n", err)

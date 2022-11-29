@@ -41,7 +41,7 @@ func (d *Database) Bootstrap() (err error) {
 													url TEXT UNIQUE NOT NULL,
 													userid TEXT NOT NULL,
 													is_deleted BOOLEAN NOT NULL)`
-	//Выполняем SQL запрос.
+	// Выполняем SQL запрос.
 	_, err = d.DB.Exec(table)
 	if err != nil {
 		return err
@@ -65,16 +65,16 @@ func (d *Database) Connect(conf *config.Config) (err error) {
 // GetShortURL - метод, возвращающий hash сокращенного url.
 func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, error) {
 	var hash string
-	//Задаем контекст на основе переданного из запроса
+	// Задаем контекст на основе переданного из запроса
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
-	//Готовим SQL запрос и выполняем.
+	// Готовим SQL запрос и выполняем.
 	str := `SELECT hashid FROM shortener WHERE url = $1 AND is_deleted = false`
 	err := d.DB.QueryRowContext(ctx, str, fullURL).Scan(&hash)
 	if err != nil {
 		return "", err
 	}
-	//Возвращем hash, если не было ошибки.
+	// Возвращем hash, если не было ошибки.
 	return hash, nil
 }
 
@@ -82,52 +82,52 @@ func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, err
 func (d *Database) GetFullURL(ctx context.Context, hash string) (string, error) {
 	var fullURL string
 	var del bool
-	//Задаем контекст на основе переданного из запроса
+	// Задаем контекст на основе переданного из запроса
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
-	//Готовим SQL запрос и выполняем.
+	// Готовим SQL запрос и выполняем.
 	str := `SELECT url , is_deleted FROM shortener WHERE hashid = $1`
 	err := d.DB.QueryRowContext(ctx, str, hash).Scan(&fullURL, &del)
-	//Если URL отсутствует в БД возвращаем соответствующую ошибку.
+	// Если URL отсутствует в БД возвращаем соответствующую ошибку.
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFoundURL
 	}
-	//Если URL удален возвращаем соответствующую ошибку.
+	// Если URL удален возвращаем соответствующую ошибку.
 	if del {
 		return "", ErrDeletedURL
 	}
-	//Возвращем original_url.
+	// Возвращем original_url.
 	return fullURL, nil
 }
 
 // InsertURL - метод, который сохраняет original_url,user_id и hash в базу данных.
 func (d *Database) saveData(ctx context.Context, fullURL string, userid string, hash string) error {
-	//Проверяем полученные данные.
+	// Проверяем полученные данные.
 	if fullURL == "" || fullURL == " " || userid == "" || userid == " " || hash == "" || hash == " " {
 		return errors.New("ErrNoEmptyInsert")
 	}
-	//Задаем контекст на основе переданного из запроса
+	// Задаем контекст на основе переданного из запроса
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
-	//Объявляем начало транзакции.
+	// Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
 		return err
 	}
-	//defer tr.Rollback()
-	//Подготавливаем стейтмент для БД.
+	defer tr.Rollback()
+	// Подготавливаем стейтмент для БД.
 	str := `INSERT INTO shortener(hashid,url,userid,is_deleted)VALUES ($1,$2,$3,false)`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		return err
 	}
 	defer st.Close()
-	//Выполняем стейтмент.
+	// Выполняем стейтмент.
 	_, err = st.ExecContext(ctx, hash, fullURL, userid)
 	if err != nil {
 		return err
 	}
-	//Подтверждаем транзакцию.
+	// Подтверждаем транзакцию.
 	err = tr.Commit()
 	if err != nil {
 		return err
@@ -137,49 +137,49 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 
 // InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
 func (d *Database) InsertURL(ctx context.Context, fullURL string, userID string) (string, error) {
-	//Генерируем hash.
+	// Генерируем hash.
 	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
-	//Проверяем есть ли в хранилище такой url.
+	// Проверяем есть ли в хранилище такой url.
 	okHash, err := d.GetShortURL(ctx, fullURL)
-	//Если нет, то вставляем новые данные.
+	// Если нет, то вставляем новые данные.
 	if err != nil {
 		err = d.saveData(ctx, fullURL, userID, hash)
 		if err != nil {
 			return "", err
 		}
-		//Возвращаем сгенерированный hash.
+		// Возвращаем сгенерированный hash.
 		return hash, nil
 	}
-	//Если есть, возвращаем hash и ошибку.
+	// Если есть, возвращаем hash и ошибку.
 	return okHash, ErrConflictInsert
 }
 
 // GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error) {
-	//Задаем контекст на основе переданного из запроса
+	// Задаем контекст на основе переданного из запроса
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
-	//Объявляем переменные и массив с результатом.
+	// Объявляем переменные и массив с результатом.
 	var hash string
 	var url string
 	result := make([]SlicedURL, 0)
-	//Подготавливаем/выполняем запрос базе данных.
+	// Подготавливаем/выполняем запрос базе данных.
 	str := `SELECT hashid , url FROM shortener WHERE userid = $1 AND is_deleted = false`
 	rows, err := d.DB.QueryContext(ctx, str, userid)
-	//Проверяем обе ошибки.
+	// Проверяем обе ошибки.
 	if err != nil || rows.Err() != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	//Итерируемся внутри полученного курсора.
+	// Итерируемся внутри полученного курсора.
 	for rows.Next() {
-		//Сканируем строку в переменные.
+		// Сканируем строку в переменные.
 		err = rows.Scan(&hash, &url)
 		if err != nil {
 			return nil, err
 		}
-		//Заполняем массив с результатом.
+		// Заполняем массив с результатом.
 		result = append(result, SlicedURL{
 			Short: hash,
 			Full:  url,
@@ -190,7 +190,7 @@ func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedU
 
 // Ping - возвращает ответ от БД Ping.
 func (d *Database) Ping(ctx context.Context) error {
-	//Задаем контекст на основе переданного из запроса
+	// Задаем контекст на основе переданного из запроса
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	return d.DB.PingContext(ctx)
@@ -202,23 +202,23 @@ func (d *Database) Delete(hashes []string, userID string) error {
 	defer d.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	//Объявляем начало транзакции.
+	// Объявляем начало транзакции.
 	tr, err := d.DB.Begin()
 	if err != nil {
 		return err
 	}
 	defer tr.Rollback()
-	//Подготавливаем стейтмент для БД.
+	// Подготавливаем стейтмент для БД.
 	str := `update shortener set is_deleted=true WHERE hashid = any ($1) and userid = $2`
 	st, err := tr.Prepare(str)
 	if err != nil {
 		return err
 	}
 	defer st.Close()
-	//Выполняем транзакцию.
+	// Выполняем транзакцию.
 	if _, err = st.ExecContext(ctx, hashes, userID); err != nil {
 		return err
 	}
-	//Возвращаем результат транзакции.
+	// Возвращаем результат транзакции.
 	return tr.Commit()
 }
