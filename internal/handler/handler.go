@@ -296,7 +296,7 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 // DeleteBatch - обработчик эндпоинта DELETE /api/user/urls , принимает в теле запроса JSON ,
 // с идентификаторами сокращенных URL (hash),запускает асинхронный процесс удаления этих URL.
 func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
-	// Инициализируем контекст
+	// Инициализируем контекст.
 	ctx := context.Background()
 	defer r.Body.Close()
 	// Читаем тело запроса.
