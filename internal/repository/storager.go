@@ -12,7 +12,7 @@ type Storager interface {
 	saveData(ctx context.Context, fullURL string, userid string, hash string) error
 	InsertURL(ctx context.Context, fURL string, userID string) (string, error)
 	GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error)
-	Delete(ctx context.Context, userID []string, shortURL string) error
+	Delete(ctx context.Context, hashes []string, userID string) error
 	Ping(ctx context.Context) error
 }
 
@@ -60,3 +60,5 @@ var ErrNotFoundURL error = errors.New("URL not found in DB")
 
 // ErrDeletedURL - ошибка,показывающая , что запрашиваемый URL нет удален из БД.
 var ErrDeletedURL error = errors.New("URL is delete")
+
+var ErrFileStoragePathNil error = errors.New("err FILE_STORAGE_PATH is nil ")

@@ -205,3 +205,8 @@ func (d *Database) Delete(ctx context.Context, hashes []string, userID string) e
 	// Возвращаем результат транзакции.
 	return tr.Commit()
 }
+
+func (d *Database) clearTable() error {
+	_, err := d.DB.Exec(`delete from shortener`)
+	return err
+}

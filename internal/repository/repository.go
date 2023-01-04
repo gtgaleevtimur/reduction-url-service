@@ -28,7 +28,9 @@ func NewStorage(c *config.Config) Storager {
 	// Проверяем задан ли FILE_STORAGE_PATH, если да, то восстанавливаем данные оттуда.
 	err := s.LoadRecoveryStorage(c.StoragePath)
 	if err != nil {
-		log.Println(err)
+		if !errors.Is(err, ErrFileStoragePathNil) {
+			log.Println(err)
+		}
 	}
 
 	return s
@@ -120,7 +122,7 @@ func (s *Storage) saveData(_ context.Context, fullURL string, userid string, has
 func (s *Storage) LoadRecoveryStorage(str string) error {
 	// Выполняем проверку текущей конфигурации.
 	if str == "" {
-		return errors.New("err FILE_STORAGE_PATH is nil ")
+		return ErrFileStoragePathNil
 	}
 	// Блокируем хранилище на время выполнения операции.
 	s.Lock()

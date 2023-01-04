@@ -18,7 +18,7 @@ func Decompress(next http.Handler) http.Handler {
 			r.Body = g
 			defer g.Close()
 		}
-		// Если запрос не сжат ,то передаем дальше.
+		// Если запрос не сжат, то передаем дальше.
 		next.ServeHTTP(w, r)
 	})
 }
