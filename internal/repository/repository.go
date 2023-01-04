@@ -16,7 +16,7 @@ import (
 type Storage struct {
 	Data        map[string]URL
 	FileRecover *FileRecover
-	sync.Mutex
+	sync.RWMutex
 }
 
 // NewStorage - функция-конструктор in-memory хранилища,возвращает интерфейс.
@@ -58,8 +58,8 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string, userID string) 
 
 // GetShortURL - метод, возвращающий hash сокращенного url.
 func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error) {
-	s.Lock()
-	defer s.Unlock()
+	s.RLock()
+	defer s.RUnlock()
 	for hash, value := range s.Data {
 		if value.FURL == fullURL && !value.Delete {
 			return hash, nil
@@ -70,8 +70,8 @@ func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error)
 
 // GetFullURL - метод, возвращающий original_url по его hash.
 func (s *Storage) GetFullURL(_ context.Context, shortURL string) (string, error) {
-	s.Lock()
-	defer s.Unlock()
+	s.RLock()
+	defer s.RUnlock()
 	// Проверяем наличие URL в БД.
 	if val, ok := s.Data[shortURL]; ok {
 		// Если URL удален возвращаем соответствующую ошибку.
@@ -156,8 +156,8 @@ func (s *Storage) LoadRecoveryStorage(str string) error {
 // GetAllUserURLs - метод возвращающий массив со всеми original_url+hash сохраненными пользователем.
 func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL, error) {
 	// Блокируем хранилище на время выполнения операции.
-	s.Lock()
-	defer s.Unlock()
+	s.RLock()
+	defer s.RUnlock()
 	// Инициализируем результирующий массив.
 	result := make([]SlicedURL, 0)
 	// Итерируемся по хранилищу
