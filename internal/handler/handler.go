@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	mw "github.com/gtgaleevtimur/reduction-url-service/internal/handler/middleware"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
-	"io"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // NewRouter - функция инициализирующая и настраивающая роутер сервиса.

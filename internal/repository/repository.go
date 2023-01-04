@@ -38,7 +38,7 @@ func NewStorage(c *config.Config) Storager {
 
 // InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
 func (s *Storage) InsertURL(ctx context.Context, fullURL string, userID string) (string, error) {
-	// Генерируем hash.
+	// Генерируем hash .
 	hasher := md5.Sum([]byte(fullURL + userID))
 	hash := hex.EncodeToString(hasher[:len(hasher)/5])
 	// Проверяем есть ли в хранилище такой url.

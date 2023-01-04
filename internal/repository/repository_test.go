@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
+	"testing"
+
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestNewStorage(t *testing.T) {
