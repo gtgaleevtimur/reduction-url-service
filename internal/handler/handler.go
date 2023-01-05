@@ -12,7 +12,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
-	mw "github.com/gtgaleevtimur/reduction-url-service/internal/handler/middleware"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
 
@@ -30,8 +29,8 @@ func NewRouter(s repository.Storager, c *config.Config) chi.Router {
 	// Запуск пользовательских middleware.
 	router.Use(middleware.Compress(1, `text/plain`, `application/json`))
 	router.Use(middleware.AllowContentEncoding(`gzip`))
-	router.Use(mw.Decompress)
-	router.Use(mw.CookiesMiddleware)
+	router.Use(Decompress)
+	router.Use(CookiesMiddleware)
 	// Запуск хэндлеров и их паттерны.
 	router.Route("/", func(router chi.Router) {
 		router.Post("/", controller.ShortURLTextBy)
