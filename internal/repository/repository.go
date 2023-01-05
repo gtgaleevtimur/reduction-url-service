@@ -36,7 +36,7 @@ func NewStorage(c *config.Config) Storager {
 	return s
 }
 
-// InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
+// InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url.
 func (s *Storage) InsertURL(ctx context.Context, fullURL string, userID string) (string, error) {
 	// Генерируем hash .
 	hasher := md5.Sum([]byte(fullURL + userID))
@@ -100,7 +100,7 @@ func (s *Storage) saveData(_ context.Context, fullURL string, userid string, has
 		FURL:   fullURL,
 		Delete: false,
 	}
-	// Если FILE_STORAGE_PATH выставлен, нто записывает данные в резервное хранилище..
+	// Если FILE_STORAGE_PATH выставлен, нто записывает данные в резервное хранилище.
 	if s.FileRecover != nil {
 		// Готовим структуру для резервного хранилища.
 		URLItem := NodeURL{
@@ -160,7 +160,7 @@ func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL,
 	defer s.RUnlock()
 	// Инициализируем результирующий массив.
 	result := make([]SlicedURL, 0)
-	// Итерируемся по хранилищу
+	// Итерируемся по хранилищу.
 	for hash, url := range s.Data {
 		// Если нашли совпадение userID, то добавляем в массив данные.
 		if url.UserID == userid && !url.Delete {
@@ -170,11 +170,11 @@ func (s *Storage) GetAllUserURLs(_ context.Context, userid string) ([]SlicedURL,
 			})
 		}
 	}
-	// Если записи не найдены возвращаем ошибку
+	// Если записи не найдены возвращаем ошибку.
 	if len(result) == 0 {
 		return nil, errors.New("ErrNotExistUserURLs")
 	}
-	// Иначе возвращаем массив
+	// Иначе возвращаем массив.
 	return result, nil
 }
 
@@ -183,7 +183,7 @@ func (s *Storage) Delete(_ context.Context, hashes []string, userID string) erro
 	// Блокируем хранилище на время выполнения операции.
 	s.Lock()
 	defer s.Unlock()
-	// Проверяем что userID URL в базе данных с таким hash соответствует userID, сделавшему запрос
+	// Проверяем что userID URL в базе данных с таким hash соответствует userID, сделавшему запрос.
 	for _, hash := range hashes {
 		if s.Data[hash].UserID == userID {
 			// Применяем изменения.

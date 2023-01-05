@@ -1,3 +1,4 @@
+// Package app аккумулирует все компоненты сервиса и запускает его работу.
 package app
 
 import (
@@ -9,6 +10,7 @@ import (
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
 
+// Run - функция собирающая все компоненты сервиса воедино.
 func Run() {
 	// Конфигурация приложения через считывание флагов и переменных окружения.
 	conf := config.NewConfig(config.WithParseEnv())

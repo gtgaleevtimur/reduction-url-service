@@ -18,21 +18,21 @@ import (
 
 // NewRouter - функция инициализирующая и настраивающая роутер сервиса.
 func NewRouter(s repository.Storager, c *config.Config) chi.Router {
-	// инициализация контролера всех хэндлеров приложения.
+	// Инициализация контролера всех хэндлеров приложения.
 	controller := newServerHandler(s, c)
-	// инициализация роутера chi
+	// Инициализация роутера chi.
 	router := chi.NewRouter()
-	// запуск поддержки встроенных middleware.
+	// Запуск поддержки встроенных middleware.
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
-	// запуск пользовательских middleware.
+	// Запуск пользовательских middleware.
 	router.Use(middleware.Compress(1, `text/plain`, `application/json`))
 	router.Use(middleware.AllowContentEncoding(`gzip`))
 	router.Use(mw.Decompress)
 	router.Use(mw.CookiesMiddleware)
-	// запуск хэндлеров и их паттерны.
+	// Запуск хэндлеров и их паттерны.
 	router.Route("/", func(router chi.Router) {
 		router.Post("/", controller.ShortURLTextBy)
 		router.Get("/{hash}", controller.FullURLHashBy)
@@ -45,7 +45,7 @@ func NewRouter(s repository.Storager, c *config.Config) chi.Router {
 			router.Post("/shorten/batch", controller.PostBatch)
 		})
 	})
-	// запуск хэндлеров обработчиков не поддерживаемых методов и маршрутов.
+	// Запуск хэндлеров обработчиков не поддерживаемых методов и маршрутов.
 	router.NotFound(NotFound())
 	router.MethodNotAllowed(NotAllowed())
 
@@ -63,8 +63,8 @@ func newServerHandler(s repository.Storager, c *config.Config) *ServerHandler {
 	return &ServerHandler{Storage: s, Conf: c}
 }
 
-// ShortURLTextBy - обработчик эндпоинта POST /, принимает в теле запроса текстовую строку URL для сокращения
-// и возвращает ответ с кодом 201 и сокращённым URL в виде текстовой строки в теле.
+// ShortURLTextBy - обработчик эндпоинта POST /, принимает в теле запроса текстовую строку URL для сокращения.
+// Возвращает ответ с кодом 201 и сокращённым URL в виде текстовой строки в теле.
 func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	// Инициализируем контекст
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
@@ -102,10 +102,10 @@ func (h ServerHandler) ShortURLTextBy(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(exShortURL))
 }
 
-// FullURLHashBy -обработчик эндпоинта GET /{id} ,принимает в качестве URL-параметра идентификатор сокращённого URL
-// и возвращает ответ с кодом 307 и оригинальным URL в HTTP-заголовке Location.
+// FullURLHashBy -обработчик эндпоинта GET /{id} ,принимает в качестве URL-параметра идентификатор сокращённого URL.
+// Возвращает ответ с кодом 307 и оригинальным URL в HTTP-заголовке Location.
 func (h ServerHandler) FullURLHashBy(w http.ResponseWriter, r *http.Request) {
-	// Инициализируем контекст
+	// Инициализируем контекст.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	// Считываем hash сокращенного URL из параметров запроса.
@@ -131,20 +131,20 @@ func (h ServerHandler) FullURLHashBy(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-// ShortURLJSONBy - обработчик эндпоинта POST /api/shorten,принимает в теле запроса json с оригинальным URL
-// и возвращает JSONс сокращенным URL
+// ShortURLJSONBy - обработчик эндпоинта POST /api/shorten,принимает в теле запроса json с оригинальным URL.
+// Возвращает JSON с сокращенным URL.
 func (h ServerHandler) ShortURLJSONBy(w http.ResponseWriter, r *http.Request) {
-	// Инициализируем контекст
+	// Инициализируем контекст.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	// Читаем тело запроса
+	// Читаем тело запроса.
 	reqBody, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// Десерриализуем тело запроса в структуру оригинального URL
+	// Десерриализуем тело запроса в структуру оригинального URL.
 	var full repository.FullURL
 	err = json.Unmarshal(reqBody, &full)
 	if err != nil {
@@ -160,8 +160,8 @@ func (h ServerHandler) ShortURLJSONBy(w http.ResponseWriter, r *http.Request) {
 	statusCode := http.StatusCreated
 	// Готовим структуру с сокращенным URL.
 	var sURL repository.ShortURL
-	// Передаем данные для сохранения/проверки на сокхранение URL методу базы данных,
-	// которая возвращает хэш сохраненного URL.
+	// Передаем данные для сохранения/проверки на сокхранение URL методу базы данных.
+	// Возвращает хэш сохраненного URL.
 	sURL.Short, err = h.Storage.InsertURL(ctx, full.Full, userid.Value)
 	if err != nil {
 		// Проверяем ошибку на соответсвие ситуации, когда вносимый URL уже в базе данных.
@@ -186,10 +186,9 @@ func (h ServerHandler) ShortURLJSONBy(w http.ResponseWriter, r *http.Request) {
 	w.Write(respBody)
 }
 
-// GetAllUserURLs - обработчик эндпоинта GET /api/user/urls, считывая userid из cookie возвращает все URL
-// сохраненные пользователем.
+// GetAllUserURLs - обработчик эндпоинта GET /api/user/urls, считывая userid из cookie возвращает все URL пользователя.
 func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
-	// Инициализируем контекст
+	// Инициализируем контекст.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	// Считываем cookie пользователя.
@@ -222,7 +221,7 @@ func (h ServerHandler) GetAllUserURLs(w http.ResponseWriter, r *http.Request) {
 
 // Ping - обработчик эндпоинта GET /ping , отражает доступность базы данных.
 func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
-	// Инициализируем контекст
+	// Инициализируем контекст.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	err := h.Storage.Ping(ctx)
@@ -233,10 +232,10 @@ func (h ServerHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(statusCode)
 }
 
-// PostBatch - обработчик эндпоинта POST /api/shorten/batch , принимает в теле запроса массив с JSON
-// (correlation_id + original_url) и возвращет массив с JSON c (correlation_id + short_url)
+// PostBatch - обработчик эндпоинта POST /api/shorten/batch , принимает в теле запроса массив с JSON.
+// Возвращет массив с JSON .
 func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
-	// Инициализируем контекст
+	// Инициализируем контекст.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	// Читаем тело запроса.
@@ -294,8 +293,8 @@ func (h ServerHandler) PostBatch(w http.ResponseWriter, r *http.Request) {
 	w.Write(resultJSON)
 }
 
-// DeleteBatch - обработчик эндпоинта DELETE /api/user/urls , принимает в теле запроса JSON ,
-// с идентификаторами сокращенных URL (hash),запускает асинхронный процесс удаления этих URL.
+// DeleteBatch - обработчик эндпоинта DELETE /api/user/urls , принимает в теле запроса JSON.
+// Запускает асинхронный процесс удаления этих URL.
 func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	// Инициализируем контекст.
 	ctx := context.Background()
@@ -312,17 +311,17 @@ func (h ServerHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Создаем массив для разбора тела запроса
+	// Создаем массив для разбора тела запроса.
 	var hashes []string
-	// Так как ожидаем в теле запроса массив строк [ "a", "b", "c", "d", ...]
-	// парсим запрос и записываем результат в массив для разбора
+	// Так как ожидаем в теле запроса массив строк [ "a", "b", "c", "d", ...].
+	// Парсим запрос и записываем результат в массив для разбора.
 	err = json.Unmarshal(body, &hashes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	// В отдельной горутине запускаем процесс удаления.
-	// Передаем горутине список и cookie
+	// Передаем горутине список и cookie.
 	go h.Storage.Delete(ctx, hashes, userid.Value)
 	// Пишем ответ.
 	w.WriteHeader(http.StatusAccepted)

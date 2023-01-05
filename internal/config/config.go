@@ -1,3 +1,4 @@
+// Package config отвечает за конфигурационный файл сервиса, за его инициализацию и настройки.
 package config
 
 import (
@@ -30,7 +31,7 @@ func NewConfig(options ...Option) *Config {
 		DatabaseDSN:   "",
 	}
 
-	//если в аргументах получили Options, то применяем их к Config.
+	// если в аргументах получили Options, то применяем их к Config.
 	for _, opt := range options {
 		opt(&conf)
 	}

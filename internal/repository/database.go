@@ -35,6 +35,7 @@ func NewDatabaseDSN(conf *config.Config) (Storager, error) {
 	return s, nil
 }
 
+// Bootstrap - метод, создающий рабочую таблицу в БД.
 func (d *Database) Bootstrap() (err error) {
 	//Подготавливаем SQL запрос на создание таблицы, если ее нет.
 	// Выполняем SQL запрос.
@@ -122,7 +123,7 @@ func (d *Database) saveData(ctx context.Context, fullURL string, userid string, 
 	return nil
 }
 
-// InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url
+// InsertURL - метод ,который генерирует hash для ключа,передает hash+url+userid хранилищу,возвращает сокращенный url.
 func (d *Database) InsertURL(ctx context.Context, fullURL string, userID string) (string, error) {
 	// Генерируем hash.
 	hasher := md5.Sum([]byte(fullURL + userID))
@@ -173,7 +174,7 @@ func (d *Database) GetAllUserURLs(ctx context.Context, userid string) ([]SlicedU
 
 // Ping - возвращает ответ от БД Ping.
 func (d *Database) Ping(ctx context.Context) error {
-	// Задаем контекст на основе переданного из запроса
+	// Задаем контекст на основе переданного из запроса.
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 	return d.DB.PingContext(ctx)
@@ -206,6 +207,7 @@ func (d *Database) Delete(ctx context.Context, hashes []string, userID string) e
 	return tr.Commit()
 }
 
+// clearTable - хелпер-метод, очищающий поля таблицы.
 func (d *Database) clearTable() error {
 	_, err := d.DB.Exec(`delete from shortener`)
 	return err

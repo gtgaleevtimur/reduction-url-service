@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -19,6 +20,16 @@ import (
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
+
+func TestNewRouter(t *testing.T) {
+	t.Run("NewRouter", func(t *testing.T) {
+		conf := config.NewConfig(config.WithParseEnv())
+		storage, err := repository.NewDataSource(conf)
+		assert.NoError(t, err)
+		got := NewRouter(storage, conf)
+		require.NotNil(t, got)
+	})
+}
 
 func TestNewServerHandler(t *testing.T) {
 	tests := []struct {
@@ -107,6 +118,54 @@ func TestServerHandler_FullURLHashBy(t *testing.T) {
 	})
 }
 
+func ExampleServerHandler_FullURLHashBy() {
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	r := NewRouter(controller, cnf)
+	hash, err := controller.InsertURL(context.Background(), "http://test.test/test", "sadASdQeAWDwdAs")
+	if err != nil {
+		log.Fatal(err)
+	}
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/"+hash, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+}
+
+func BenchmarkServerHandler_FullURLHashBy(b *testing.B) {
+	var reader io.Reader
+	w := httptest.NewRecorder()
+	rtr := chi.NewRouter()
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	h := newServerHandler(controller, cnf)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		st := "/AzLn727sq" + strconv.Itoa(i)
+		reader = strings.NewReader(st)
+		request := httptest.NewRequest(http.MethodGet, "/", reader)
+		b.StartTimer()
+		rtr.HandleFunc("/{hash}", h.FullURLHashBy)
+		rtr.ServeHTTP(w, request)
+		res := w.Result()
+		b.StopTimer()
+		res.Body.Close()
+	}
+}
+
 func TestServerHandler_ShortURLTextBy(t *testing.T) {
 	type want struct {
 		statusCode int
@@ -175,6 +234,46 @@ func TestServerHandler_ShortURLTextBy(t *testing.T) {
 				assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			}
 		})
+	}
+}
+
+func ExampleServerHandler_ShortURLTextBy() {
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	r := NewRouter(controller, cnf)
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBuffer([]byte("http://www.test.test/test")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+}
+
+func BenchmarkServerHandler_ShortURLTextBy(b *testing.B) {
+	var reader io.Reader
+	w := httptest.NewRecorder()
+	rtr := chi.NewRouter()
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	h := newServerHandler(controller, cnf)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		st := "http://test_link_" + strconv.Itoa(i) + ".ru"
+		reader = strings.NewReader(st)
+		request := httptest.NewRequest(http.MethodPost, "/", reader)
+		b.StartTimer()
+		rtr.HandleFunc("/", h.ShortURLTextBy)
+		rtr.ServeHTTP(w, request)
+		res := w.Result()
+		b.StopTimer()
+		res.Body.Close()
 	}
 }
 
@@ -247,14 +346,50 @@ func TestServerHandler_ShortURLJSONBy(t *testing.T) {
 	})
 }
 
-func TestNewRouter(t *testing.T) {
-	t.Run("NewRouter", func(t *testing.T) {
-		conf := config.NewConfig(config.WithParseEnv())
-		storage, err := repository.NewDataSource(conf)
-		assert.NoError(t, err)
-		got := NewRouter(storage, conf)
-		require.NotNil(t, got)
-	})
+func ExampleServerHandler_ShortURLJSONBy() {
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	r := NewRouter(controller, cnf)
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+	b, err := json.Marshal(repository.FullURL{
+		Full: ""})
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = controller.InsertURL(context.Background(), "http://www.test.net/test", "sadASdQeAWDwdAs")
+	if err != nil {
+		log.Fatal(err)
+	}
+	req, err := http.NewRequest(http.MethodPatch, ts.URL+"/api/shorten", bytes.NewBuffer(b))
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	defer resp.Body.Close()
+}
+
+func BenchmarkServerHandler_ShortURLJSONBy(b *testing.B) {
+	var reader io.Reader
+	w := httptest.NewRecorder()
+	rtr := chi.NewRouter()
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	h := newServerHandler(controller, cnf)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		st := "{\"url\": \"http://bench" + strconv.Itoa(i) + ".ru\"}"
+		reader = strings.NewReader(st)
+		request := httptest.NewRequest(http.MethodPost, "/", reader)
+		b.StartTimer()
+		rtr.HandleFunc("/api/shorten", h.GetAllUserURLs)
+		rtr.ServeHTTP(w, request)
+		res := w.Result()
+		b.StopTimer()
+		res.Body.Close()
+	}
 }
 
 func TestServerHandler_Ping(t *testing.T) {
@@ -271,6 +406,23 @@ func TestServerHandler_Ping(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
+}
+
+func ExampleServerHandler_Ping() {
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	r := NewRouter(controller, cnf)
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", bytes.NewBuffer([]byte("")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
 }
 
 func TestServerHandler_GetAllUserURLs(t *testing.T) {
@@ -306,49 +458,45 @@ func TestServerHandler_GetAllUserURLs(t *testing.T) {
 	})
 }
 
-func BenchmarkServerHandler_ShortURLTextBy(b *testing.B) {
-	var reader io.Reader
-	w := httptest.NewRecorder()
-	rtr := chi.NewRouter()
+func ExampleServerHandler_GetAllUserURLs() {
 	cnf := config.NewConfig()
 	controller := repository.NewStorage(cnf)
-	h := newServerHandler(controller, cnf)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		st := "http://test_link_" + strconv.Itoa(i) + ".ru"
-		reader = strings.NewReader(st)
-		request := httptest.NewRequest(http.MethodPost, "/", reader)
-		b.StartTimer()
-		rtr.HandleFunc("/", h.ShortURLTextBy)
-		rtr.ServeHTTP(w, request)
-		res := w.Result()
-		b.StopTimer()
-		res.Body.Close()
+	r := NewRouter(controller, cnf)
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBuffer([]byte("http://www.test.test/test")))
+	if err != nil {
+		log.Fatal(err)
 	}
-}
-
-func BenchmarkServerHandler_FullURLHashBy(b *testing.B) {
-	var reader io.Reader
-	w := httptest.NewRecorder()
-	rtr := chi.NewRouter()
-	cnf := config.NewConfig()
-	controller := repository.NewStorage(cnf)
-	h := newServerHandler(controller, cnf)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		st := "/AzLn727sq" + strconv.Itoa(i)
-		reader = strings.NewReader(st)
-		request := httptest.NewRequest(http.MethodGet, "/", reader)
-		b.StartTimer()
-		rtr.HandleFunc("/{hash}", h.FullURLHashBy)
-		rtr.ServeHTTP(w, request)
-		res := w.Result()
-		b.StopTimer()
-		res.Body.Close()
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	cookies := resp.Cookies()
+	var c *http.Cookie
+	for _, v := range cookies {
+		if v.Name == "shortener" {
+			c = v
+		}
+	}
+	req, err = http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBuffer([]byte("http://www.test.test/test2")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.AddCookie(c)
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	req, err = http.NewRequest(http.MethodGet, ts.URL+"/api/user/urls", bytes.NewBuffer([]byte("")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.AddCookie(c)
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -366,29 +514,6 @@ func BenchmarkServerHandler_GetAllUserURLs(b *testing.B) {
 		request := httptest.NewRequest(http.MethodGet, "/", reader)
 		b.StartTimer()
 		rtr.HandleFunc("/api/user/urls", h.GetAllUserURLs)
-		rtr.ServeHTTP(w, request)
-		res := w.Result()
-		b.StopTimer()
-		res.Body.Close()
-	}
-}
-
-func BenchmarkServerHandler_ShortURLJSONBy(b *testing.B) {
-	var reader io.Reader
-	w := httptest.NewRecorder()
-	rtr := chi.NewRouter()
-	cnf := config.NewConfig()
-	controller := repository.NewStorage(cnf)
-	h := newServerHandler(controller, cnf)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		st := "{\"url\": \"http://bench" + strconv.Itoa(i) + ".ru\"}"
-		reader = strings.NewReader(st)
-		request := httptest.NewRequest(http.MethodPost, "/", reader)
-		b.StartTimer()
-		rtr.HandleFunc("/api/shorten", h.GetAllUserURLs)
 		rtr.ServeHTTP(w, request)
 		res := w.Result()
 		b.StopTimer()

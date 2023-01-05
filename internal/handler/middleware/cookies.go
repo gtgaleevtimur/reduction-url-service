@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// CookiesMiddleware - middleware, проверяющяя в запросе cookie на наличие/подлинность. Если cookie нет, то генерируем новую и вставляем в Header.
-// Алгоритм подписи - AES.
+// CookiesMiddleware - middleware, проверяющяя в запросе cookie на наличие/подлинность.
+// Если cookie нет, то генерируем новую и вставляем в Header. Алгоритм подписи - AES.
 func CookiesMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Инициализируем буфер-переменную куда будем кодировать-декодировать cookie.
