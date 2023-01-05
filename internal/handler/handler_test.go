@@ -451,14 +451,14 @@ func TestServerHandler_GetAllUserURLs(t *testing.T) {
 		require.NoError(t, err)
 		req2.AddCookie(c)
 		resp2, err := http.DefaultClient.Do(req2)
-		defer resp2.Body.Close()
 		require.NoError(t, err)
+		defer resp2.Body.Close()
 		req3, err := http.NewRequest(http.MethodGet, ts.URL+"/api/user/urls", bytes.NewBuffer([]byte("")))
 		require.NoError(t, err)
 		req3.AddCookie(c)
 		resp3, err := http.DefaultClient.Do(req3)
-		defer resp3.Body.Close()
 		require.NoError(t, err)
+		defer resp3.Body.Close()
 		require.Equal(t, http.StatusOK, resp3.StatusCode)
 	})
 }
@@ -494,15 +494,17 @@ func ExampleServerHandler_GetAllUserURLs() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer resp.Body.Close()
 	req, err = http.NewRequest(http.MethodGet, ts.URL+"/api/user/urls", bytes.NewBuffer([]byte("")))
 	if err != nil {
 		log.Fatal(err)
 	}
 	req.AddCookie(c)
-	resp, err = http.DefaultClient.Do(req)
+	resp2, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer resp2.Body.Close()
 }
 
 func BenchmarkServerHandler_GetAllUserURLs(b *testing.B) {
