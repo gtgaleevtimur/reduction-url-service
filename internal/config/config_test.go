@@ -1,11 +1,13 @@
 package config
 
-/*
+import (
+	"strconv"
+	"testing"
+)
 
-func BenchmarkNewConfig(b *testing.B) {
+func BenchmarkConfig_ExpShortURL(b *testing.B) {
+	c := NewConfig(WithParseEnv())
 	for i := 0; i < b.N; i++ {
-		_ = NewConfig(WithParseEnv())
+		c.ExpShortURL(strconv.Itoa(i))
 	}
 }
-
-*/
