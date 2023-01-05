@@ -1,16 +1,8 @@
 package repository
 
-import (
-	"context"
-	"testing"
+// Этот пакет с тестами работает только локально.
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
-)
-
+/*
 func TestNewDatabaseDSN(t *testing.T) {
 	t.Run("Positive NewDataBaseDSN", func(t *testing.T) {
 		cnf := config.NewConfig()
@@ -261,3 +253,4 @@ func TestDatabase_Ping(t *testing.T) {
 		require.Equal(t, res, nil)
 	})
 }
+*/
