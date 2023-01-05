@@ -366,6 +366,9 @@ func ExampleServerHandler_ShortURLJSONBy() {
 		log.Fatal(err)
 	}
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer resp.Body.Close()
 }
 
@@ -444,17 +447,19 @@ func TestServerHandler_GetAllUserURLs(t *testing.T) {
 				c = v
 			}
 		}
-		req, err = http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBuffer([]byte("http://www.test.test/test2")))
+		req2, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBuffer([]byte("http://www.test.test/test2")))
 		require.NoError(t, err)
-		req.AddCookie(c)
-		resp, err = http.DefaultClient.Do(req)
+		req2.AddCookie(c)
+		resp2, err := http.DefaultClient.Do(req2)
+		defer resp2.Body.Close()
 		require.NoError(t, err)
-		req, err = http.NewRequest(http.MethodGet, ts.URL+"/api/user/urls", bytes.NewBuffer([]byte("")))
+		req3, err := http.NewRequest(http.MethodGet, ts.URL+"/api/user/urls", bytes.NewBuffer([]byte("")))
 		require.NoError(t, err)
-		req.AddCookie(c)
-		resp, err = http.DefaultClient.Do(req)
+		req3.AddCookie(c)
+		resp3, err := http.DefaultClient.Do(req3)
+		defer resp3.Body.Close()
 		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, http.StatusOK, resp3.StatusCode)
 	})
 }
 
