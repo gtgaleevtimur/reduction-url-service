@@ -161,8 +161,8 @@ func BenchmarkServerHandler_FullURLHashBy(b *testing.B) {
 		rtr.HandleFunc("/{hash}", h.FullURLHashBy)
 		rtr.ServeHTTP(w, request)
 		res := w.Result()
-		b.StopTimer()
 		res.Body.Close()
+		b.StopTimer()
 	}
 }
 
@@ -272,8 +272,8 @@ func BenchmarkServerHandler_ShortURLTextBy(b *testing.B) {
 		rtr.HandleFunc("/", h.ShortURLTextBy)
 		rtr.ServeHTTP(w, request)
 		res := w.Result()
-		b.StopTimer()
 		res.Body.Close()
+		b.StopTimer()
 	}
 }
 
@@ -390,8 +390,8 @@ func BenchmarkServerHandler_ShortURLJSONBy(b *testing.B) {
 		rtr.HandleFunc("/api/shorten", h.GetAllUserURLs)
 		rtr.ServeHTTP(w, request)
 		res := w.Result()
-		b.StopTimer()
 		res.Body.Close()
+		b.StopTimer()
 	}
 }
 
