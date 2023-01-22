@@ -8,7 +8,6 @@ import (
 	"github.com/caarlos0/env"
 )
 
-//
 const (
 	// HostPort - порт хоста по дефолту.
 	HostPort string = "8080"
