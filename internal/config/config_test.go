@@ -6,7 +6,7 @@ import (
 )
 
 func BenchmarkConfig_ExpShortURL(b *testing.B) {
-	c := NewConfig(WithParseEnv())
+	c := NewConfig()
 	for i := 0; i < b.N; i++ {
 		c.ExpShortURL(strconv.Itoa(i))
 	}
