@@ -7,13 +7,14 @@ import (
 	"github.com/caarlos0/env"
 )
 
+// Настройки сервера по умолчанию.
 const (
-	HostPort string = "8080"
-	HostAddr string = "localhost"
-	HTTP     string = "http://"
+	HostPort string = "8080"      // порт хоста по дефолту
+	HostAddr string = "localhost" // адрес хоста по дефолту
+	HTTP     string = "http://"   // префикс адреса по дефолту
 )
 
-// Config -структура конфигурационного файла приложения.
+// Config - структура конфигурационного файла приложения.
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS"`
 	BaseURL       string `env:"BASE_URL"`
@@ -30,7 +31,7 @@ func NewConfig(options ...Option) *Config {
 		DatabaseDSN:   "",
 	}
 
-	//если в аргументах получили Options, то применяем их к Config.
+	// если в аргументах получили Options, то применяем их к Config.
 	for _, opt := range options {
 		opt(&conf)
 	}

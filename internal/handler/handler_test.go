@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 
+	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +19,17 @@ import (
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
 
-func TestNewServerStore(t *testing.T) {
+func TestNewRouter(t *testing.T) {
+	t.Run("NewRouter", func(t *testing.T) {
+		conf := config.NewConfig(config.WithParseEnv())
+		storage, err := repository.NewDataSource(conf)
+		assert.NoError(t, err)
+		got := NewRouter(storage, conf)
+		require.NotNil(t, got)
+	})
+}
+
+func TestNewServerHandler(t *testing.T) {
 	tests := []struct {
 		name string
 		want *ServerHandler
@@ -34,7 +47,7 @@ func TestNewServerStore(t *testing.T) {
 	}
 }
 
-func TestServerStore_GetFullUrl(t *testing.T) {
+func TestServerHandler_FullURLHashBy(t *testing.T) {
 	t.Run("Positive test", func(t *testing.T) {
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
@@ -52,7 +65,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
@@ -75,7 +88,7 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -95,15 +108,38 @@ func TestServerStore_GetFullUrl(t *testing.T) {
 			}}
 		resp, err := client.Do(req)
 		require.NoError(t, err)
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		assert.Equal(t, "ErrNotFoundURL\n", string(body))
+		assert.Equal(t, "NotExistURL\n", string(body))
 	})
 }
 
-func TestServerStore_CreateShortURL(t *testing.T) {
+func BenchmarkServerHandler_FullURLHashBy(b *testing.B) {
+	var reader io.Reader
+	w := httptest.NewRecorder()
+	rtr := chi.NewRouter()
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	h := newServerHandler(controller, cnf)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		st := "/AzLn727sq" + strconv.Itoa(i)
+		reader = strings.NewReader(st)
+		request := httptest.NewRequest(http.MethodGet, "/", reader)
+		b.StartTimer()
+		rtr.HandleFunc("/{hash}", h.FullURLHashBy)
+		rtr.ServeHTTP(w, request)
+		res := w.Result()
+		res.Body.Close()
+		b.StopTimer()
+	}
+}
+
+func TestServerHandler_ShortURLTextBy(t *testing.T) {
 	type want struct {
 		statusCode int
 		respType   string
@@ -174,7 +210,30 @@ func TestServerStore_CreateShortURL(t *testing.T) {
 	}
 }
 
-func TestServerHandler_GetShortURL(t *testing.T) {
+func BenchmarkServerHandler_ShortURLTextBy(b *testing.B) {
+	var reader io.Reader
+	w := httptest.NewRecorder()
+	rtr := chi.NewRouter()
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	h := newServerHandler(controller, cnf)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		st := "http://test_link_" + strconv.Itoa(i) + ".ru"
+		reader = strings.NewReader(st)
+		request := httptest.NewRequest(http.MethodPost, "/", reader)
+		b.StartTimer()
+		rtr.HandleFunc("/", h.ShortURLTextBy)
+		rtr.ServeHTTP(w, request)
+		res := w.Result()
+		res.Body.Close()
+		b.StopTimer()
+	}
+}
+
+func TestServerHandler_ShortURLJSONBy(t *testing.T) {
 	t.Run("Positive test", func(t *testing.T) {
 		cnf := config.NewConfig()
 		controller := repository.NewStorage(cnf)
@@ -193,7 +252,7 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		var short repository.ShortURL
 		err = json.Unmarshal(body, &short)
@@ -241,4 +300,99 @@ func TestServerHandler_GetShortURL(t *testing.T) {
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
+}
+
+func BenchmarkServerHandler_ShortURLJSONBy(b *testing.B) {
+	var reader io.Reader
+	w := httptest.NewRecorder()
+	rtr := chi.NewRouter()
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	h := newServerHandler(controller, cnf)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		st := "{\"url\": \"http://bench" + strconv.Itoa(i) + ".ru\"}"
+		reader = strings.NewReader(st)
+		request := httptest.NewRequest(http.MethodPost, "/", reader)
+		b.StartTimer()
+		rtr.HandleFunc("/api/shorten", h.GetAllUserURLs)
+		rtr.ServeHTTP(w, request)
+		res := w.Result()
+		res.Body.Close()
+		b.StopTimer()
+	}
+}
+
+func TestServerHandler_Ping(t *testing.T) {
+	t.Run("Ping", func(t *testing.T) {
+		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
+		r := NewRouter(controller, cnf)
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+		req, err := http.NewRequest(http.MethodGet, ts.URL+"/ping", bytes.NewBuffer([]byte("")))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+}
+
+func TestServerHandler_GetAllUserURLs(t *testing.T) {
+	t.Run("Positive test", func(t *testing.T) {
+		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
+		r := NewRouter(controller, cnf)
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+		req, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBuffer([]byte("http://www.test.test/test")))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		cookies := resp.Cookies()
+		var c *http.Cookie
+		for _, v := range cookies {
+			if v.Name == "shortener" {
+				c = v
+			}
+		}
+		req2, err := http.NewRequest(http.MethodPost, ts.URL+"/", bytes.NewBuffer([]byte("http://www.test.test/test2")))
+		require.NoError(t, err)
+		req2.AddCookie(c)
+		resp2, err := http.DefaultClient.Do(req2)
+		require.NoError(t, err)
+		defer resp2.Body.Close()
+		req3, err := http.NewRequest(http.MethodGet, ts.URL+"/api/user/urls", bytes.NewBuffer([]byte("")))
+		require.NoError(t, err)
+		req3.AddCookie(c)
+		resp3, err := http.DefaultClient.Do(req3)
+		require.NoError(t, err)
+		defer resp3.Body.Close()
+		require.Equal(t, http.StatusOK, resp3.StatusCode)
+	})
+}
+
+func BenchmarkServerHandler_GetAllUserURLs(b *testing.B) {
+	var reader io.Reader
+	w := httptest.NewRecorder()
+	rtr := chi.NewRouter()
+	cnf := config.NewConfig()
+	controller := repository.NewStorage(cnf)
+	h := newServerHandler(controller, cnf)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		request := httptest.NewRequest(http.MethodGet, "/", reader)
+		b.StartTimer()
+		rtr.HandleFunc("/api/user/urls", h.GetAllUserURLs)
+		rtr.ServeHTTP(w, request)
+		res := w.Result()
+		b.StopTimer()
+		res.Body.Close()
+	}
 }

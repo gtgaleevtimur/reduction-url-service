@@ -1,0 +1,92 @@
+POST http://localhost:8080/api/shorten HTTP/1.1
+content-type: application/json
+
+{"url":"test.test/http"}
+
+
+
+###
+
+POST http://localhost:8080/api/shorten HTTP/1.1
+content-type: application/json
+Set-Cookie: shortener=192f73759c9052e56ce2f4cde17a6c2733863c3c87a8b4021de9bfa0ff99da8a
+
+{"url":"test.test/http3"}
+
+
+###
+
+POST http://localhost:8080/ HTTP/1.1
+content-type: text/plain
+Set-Cookie: shortener=192f73759c9052e56ce2f4cde17a6c2733863c3c87a8b4021de9bfa0ff99da8a
+
+http://test.test/http35
+
+# 201 (Created) 1
+# 404 (Not Found)
+
+###
+
+POST http://localhost:8080/ HTTP/1.1
+content-type: text/plain
+
+http://localhost:8080/thirdurlposting
+
+# 201 (Created) 2
+# 404 (Not Found)
+
+###
+POST http://localhost:8080/ HTTP/1.1
+content-type: text/plain
+
+http://localhost:8080/thirdurlposting
+
+# 201 (Created) 2
+# 404 (Not Found)
+
+###
+
+GET http://localhost:8080/api/user/urls HTTP/1.1
+
+
+
+
+###
+
+DELETE  http://localhost:8080/api/user/urls HTTP/1.1
+content-type: text/plain
+Set-Cookie: shortener=ef5255ff2829f5b984415742ab7bcecc7e00023c37561d1ece8df10e7eac0c10
+
+["150471"]
+
+
+
+###
+
+
+GET  http://localhost:8080/2cd23f HTTP/1.1
+@no-redirect
+
+# 200 (OK)
+# 404 (Not Found)
+
+###
+
+GET  http://localhost:8080/ea06f7 HTTP/1.1
+
+# 200 (OK)
+# 404 (Not Found)
+
+###
+
+GET  http://localhost:8080/api/user/urls HTTP/1.1
+Set-Cookie: shortener=c5356def30b44c8d25e2f9381508a7ce1a5205ceafadcdc2cabc53ef9508b7b8
+###
+
+
+POST  http://localhost:8080/2 HTTP/1.1
+content-type: text/plain
+
+
+# 200 (OK)
+# 404 (Not Found)
