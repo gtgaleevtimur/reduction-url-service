@@ -1,4 +1,3 @@
-// Package config отвечает за конфигурационный файл сервиса, за его инициализацию и настройки.
 package config
 
 import (
@@ -17,7 +16,7 @@ const (
 	HTTP string = "http://"
 )
 
-// Config -структура конфигурационного файла приложения.
+// Config - структура конфигурационного файла приложения.
 type Config struct {
 	ServerAddress string `env:"SERVER_ADDRESS"`
 	BaseURL       string `env:"BASE_URL"`

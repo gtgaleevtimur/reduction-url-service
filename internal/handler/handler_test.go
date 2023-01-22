@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
