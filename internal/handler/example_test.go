@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
-	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 	"log"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
 
 func ExampleServerHandler_FullURLHashBy() {
