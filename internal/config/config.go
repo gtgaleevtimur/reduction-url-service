@@ -7,13 +7,11 @@ import (
 	"github.com/caarlos0/env"
 )
 
+// Настройки сервера по умолчанию.
 const (
-	// HostPort - порт хоста по дефолту.
-	HostPort string = "8080"
-	// HostAddr - адрес хоста по дефолту.
-	HostAddr string = "localhost"
-	// HTTP - префикс адреса по дефолту.
-	HTTP string = "http://"
+	HostPort string = "8080"      // Порт хоста по дефолту
+	HostAddr string = "localhost" // Адрес хоста по дефолту
+	HTTP     string = "http://"   // Префикс адреса по дефолту.
 )
 
 // Config - структура конфигурационного файла приложения.
