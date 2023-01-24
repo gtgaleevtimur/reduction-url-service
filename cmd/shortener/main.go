@@ -5,7 +5,7 @@ import (
 	"github.com/gtgaleevtimur/reduction-url-service/internal/app"
 )
 
-// Константы версии приложения.
+// Константы версий приложения.
 var (
 	buildVersion = "1.0.0"
 	buildDate    = "24.01.2023"
