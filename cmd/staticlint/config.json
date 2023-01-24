@@ -1,0 +1,10 @@
+{
+  "staticcheck": [
+    "SA"
+  ],
+  "stylecheck": [
+    "ST1000",
+    "ST1005",
+    "ST1008"
+  ]
+}
