@@ -53,7 +53,7 @@ func main() {
 	}
 
 	analyzers := []*analysis.Analyzer{
-		analyzer.OsExitAnalyzer,
+		analyzer.ExitAnalyzer,
 		printf.Analyzer,
 		shadow.Analyzer,
 		structtag.Analyzer,
