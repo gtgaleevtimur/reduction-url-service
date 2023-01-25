@@ -5,8 +5,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/gostaticanalysis/nilerr"
@@ -38,17 +36,10 @@ type Config struct {
 }
 
 func main() {
-	file, err := os.Executable()
-	if err != nil {
-		log.Fatal().Err(err)
-	}
-	data, err := os.ReadFile(filepath.Join(filepath.Dir(file), `config.json`))
-	if err != nil {
-		log.Fatal().Err(err)
-	}
+	data := []byte(`{"staticcheck":["ST"],"stylecheck":["ST1000","ST1005","ST1008"]}`)
 
 	var config Config
-	if err = json.Unmarshal(data, &config); err != nil {
+	if err := json.Unmarshal(data, &config); err != nil {
 		log.Fatal().Err(err)
 	}
 
