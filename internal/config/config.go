@@ -9,9 +9,9 @@ import (
 
 // Настройки сервера по умолчанию.
 const (
-	HostPort string = "8080"      // порт хоста по дефолту
-	HostAddr string = "localhost" // адрес хоста по дефолту
-	HTTP     string = "http://"   // префикс адреса по дефолту
+	HostPort string = "8080"      // порт хоста по дефолту.
+	HostAddr string = "localhost" // адрес хоста по дефолту.
+	HTTP     string = "http://"   // префикс адреса по дефолту.
 )
 
 // Config - структура конфигурационного файла приложения.
@@ -30,6 +30,7 @@ func NewConfig(options ...Option) *Config {
 		BaseURL:       HostAddr + ":" + HostPort,
 		StoragePath:   "",
 		DatabaseDSN:   "",
+		EnableHTTPS:   false,
 	}
 
 	// если в аргументах получили Options, то применяем их к Config.
