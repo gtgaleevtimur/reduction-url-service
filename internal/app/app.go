@@ -3,11 +3,11 @@ package app
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/handler"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/server"
 )
 
 // Run - функция собирающая все компоненты сервиса воедино.
@@ -20,9 +20,5 @@ func Run() {
 		log.Fatal(err)
 	}
 	// Инициализация и запуск сервера.
-	server := &http.Server{
-		Handler: handler.NewRouter(storage, conf),
-		Addr:    conf.ServerAddress,
-	}
-	log.Fatal(server.ListenAndServe())
+	server.RunServer(conf, handler.NewRouter(storage, conf))
 }
