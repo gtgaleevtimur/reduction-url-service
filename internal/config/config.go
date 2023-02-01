@@ -9,7 +9,7 @@ import (
 
 // Настройки сервера по умолчанию.
 const (
-	HostPort string = "8080"      // порт хоста по дефолту
+	HostPort string = "8080"      // порт хоста по дефолту.
 	HostAddr string = "localhost" // адрес хоста по дефолту
 	HTTP     string = "http://"   // префикс адреса по дефолту
 )
