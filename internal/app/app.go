@@ -1,9 +1,11 @@
-// Package app аккумулирует все компоненты сервиса и запускает его работу.
 package app
 
 import (
+	"golang.org/x/crypto/acme/autocert"
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/handler"
@@ -20,9 +22,29 @@ func Run() {
 		log.Fatal(err)
 	}
 	// Инициализация и запуск сервера.
-	server := &http.Server{
-		Handler: handler.NewRouter(storage, conf),
-		Addr:    conf.ServerAddress,
+	startServer(conf, handler.NewRouter(storage, conf))
+}
+
+// startServer - запускает сервер с настройками из конфигурационного файла.
+func startServer(c *config.Config, h chi.Router) {
+	if !c.EnableHTTPS {
+		server := &http.Server{
+			Addr:    c.ServerAddress,
+			Handler: h,
+		}
+		log.Fatal(server.ListenAndServe())
 	}
-	log.Fatal(server.ListenAndServe())
+	if c.EnableHTTPS {
+		manager := &autocert.Manager{
+			Cache:      autocert.DirCache("cache"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(c.ServerAddress),
+		}
+		server := &http.Server{
+			Addr:      ":443",
+			Handler:   h,
+			TLSConfig: manager.TLSConfig(),
+		}
+		log.Fatal(server.ListenAndServeTLS("server.crt", "server.key"))
+	}
 }
