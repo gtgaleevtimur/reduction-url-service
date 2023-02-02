@@ -68,7 +68,7 @@ func startServer(c *config.Config, h chi.Router) {
 	}
 }
 
-// gracefulShutdown - реализация GracefulShutdown по сигналу syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT.
+// gracefulShutdown - GracefulShutdown по сигналу syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT.
 func gracefulShutdown(server *http.Server, sig chan os.Signal) {
 	<-sig
 	shutdownCtx, shutdownCtxCancel := context.WithTimeout(context.Background(), time.Second*20)
