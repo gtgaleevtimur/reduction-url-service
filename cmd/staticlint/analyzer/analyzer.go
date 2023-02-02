@@ -8,7 +8,7 @@ import (
 
 // OsExitAnalyzer - статический анализатор поиска вызова os.Exit.
 var ExitAnalyzer = &analysis.Analyzer{
-	Name: "os.Exit analyzer",
+	Name: "myExitAnalyzer",
 	Doc:  "Don't use os.Exit in main package",
 	Run:  run,
 }
