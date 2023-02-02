@@ -1,11 +1,11 @@
 package app
 
 import (
-	"golang.org/x/crypto/acme/autocert"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/handler"
