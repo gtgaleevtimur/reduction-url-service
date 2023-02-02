@@ -20,6 +20,7 @@ type Config struct {
 	BaseURL       string `env:"BASE_URL"`
 	StoragePath   string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN   string `env:"DATABASE_DSN"`
+	EnableHTTPS   bool   `env:"ENABLE_HTTPS"`
 }
 
 // NewConfig - конструктор конфигурационного файла.
@@ -29,6 +30,7 @@ func NewConfig(options ...Option) *Config {
 		BaseURL:       HostAddr + ":" + HostPort,
 		StoragePath:   "",
 		DatabaseDSN:   "",
+		EnableHTTPS:   false,
 	}
 
 	// если в аргументах получили Options, то применяем их к Config.
@@ -55,6 +57,7 @@ func (c *Config) ParseFlags() {
 	flag.StringVar(&c.BaseURL, "b", c.BaseURL, "BASE_URL")
 	flag.StringVar(&c.StoragePath, "f", c.StoragePath, "FILE_STORAGE_PATH")
 	flag.StringVar(&c.DatabaseDSN, "d", c.DatabaseDSN, "DATABASE_DSN")
+	flag.BoolVar(&c.EnableHTTPS, "s", c.EnableHTTPS, "ENABLE_HTTPS")
 	flag.Parse()
 }
 
