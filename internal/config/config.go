@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/caarlos0/env"
@@ -40,7 +40,7 @@ func NewConfig(options ...Option) *Config {
 	for _, opt := range options {
 		opt(&conf)
 	}
-	configDataJSON, err := ioutil.ReadFile(conf.Config)
+	configDataJSON, err := os.ReadFile(conf.Config)
 	if err != nil {
 		return &conf
 	}
