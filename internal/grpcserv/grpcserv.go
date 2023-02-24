@@ -186,6 +186,7 @@ func (s *Shortener) PostJSON(ctx context.Context, r *proto.PostJSONRespReq) (*pr
 	return &response, status.Errorf(codes.Unimplemented, "method PostJSON not implemented")
 }
 
+// PostBatch - метот реализующий загрузку массива с url.
 func (s *Shortener) PostBatch(ctx context.Context, r *proto.PostBatchRequest) (*proto.PostBatchResponse, error) {
 	var response proto.PostBatchResponse
 	var token string
