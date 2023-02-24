@@ -79,7 +79,7 @@ func (h ServerHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !ipNet.Contains(ip) {
-			http.Error(w, err.Error(), http.StatusForbidden)
+			http.Error(w, repository.ErrIpNotContains.Error(), http.StatusForbidden)
 			return
 		}
 	}
