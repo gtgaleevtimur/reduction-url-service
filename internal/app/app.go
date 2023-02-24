@@ -3,16 +3,18 @@ package app
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi"
+	"github.com/gtgaleevtimur/reduction-url-service/proto"
 	"golang.org/x/crypto/acme/autocert"
+	"google.golang.org/grpc"
 
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
+	"github.com/gtgaleevtimur/reduction-url-service/internal/grpcserv"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/handler"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 )
@@ -27,52 +29,65 @@ func Run() {
 		log.Fatal(err)
 	}
 	// Инициализация и запуск сервера.
-	startServer(conf, handler.NewRouter(storage, conf))
+	startServer(conf, storage)
 }
 
 // startServer - запускает сервер с настройками из конфигурационного файла.
-func startServer(c *config.Config, h chi.Router) {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	if !c.EnableHTTPS {
+func startServer(conf *config.Config, storage repository.Storager) {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer cancel()
+
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(grpcserv.MyUnaryInterceptor))
+
+	if !conf.EnableHTTPS {
+		if conf.EnableGRPC {
+			go startGRPC(storage, conf, grpcServer, cancel)
+		}
 		server := &http.Server{
-			Addr:    c.ServerAddress,
-			Handler: h,
+			Addr:    conf.ServerAddress,
+			Handler: handler.NewRouter(storage, conf),
 		}
 
-		go gracefulShutdown(server, sig)
+		go gracefulShutdown(ctx, server, grpcServer)
 
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
+			cancel()
 			log.Fatal("failed to run server")
 		}
 	}
-	if c.EnableHTTPS {
+	if conf.EnableHTTPS {
+		if conf.EnableGRPC {
+			go startGRPC(storage, conf, grpcServer, cancel)
+		}
 		manager := &autocert.Manager{
 			Cache:      autocert.DirCache("cache"),
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(c.ServerAddress),
+			HostPolicy: autocert.HostWhitelist(conf.ServerAddress),
 		}
 		server := &http.Server{
 			Addr:      ":443",
-			Handler:   h,
+			Handler:   handler.NewRouter(storage, conf),
 			TLSConfig: manager.TLSConfig(),
 		}
 
-		go gracefulShutdown(server, sig)
+		go gracefulShutdown(ctx, server, grpcServer)
 
 		err := server.ListenAndServeTLS("server.crt", "server.key")
 		if err != nil && err != http.ErrServerClosed {
+			cancel()
 			log.Fatal("failed to run server")
 		}
 	}
 }
 
 // gracefulShutdown - GracefulShutdown по сигналу syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT.
-func gracefulShutdown(server *http.Server, sig chan os.Signal) {
-	<-sig
+func gracefulShutdown(ctx context.Context, server *http.Server, grpcServer *grpc.Server) {
+	<-ctx.Done()
 	shutdownCtx, shutdownCtxCancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer shutdownCtxCancel()
+	grpcServer.Stop()
+	log.Println("gRPC server shutdown")
 	go func() {
 		<-shutdownCtx.Done()
 		if shutdownCtx.Err() == context.DeadlineExceeded {
@@ -82,5 +97,20 @@ func gracefulShutdown(server *http.Server, sig chan os.Signal) {
 	err := server.Shutdown(context.Background())
 	if err != nil {
 		log.Fatal("server shutdown error")
+	}
+}
+
+// startGRPC - запуск grpc сервера.
+func startGRPC(storage repository.Storager, conf *config.Config, grpcServer *grpc.Server, cancel context.CancelFunc) {
+	listen, err := net.Listen("tcp", ":0")
+	if err != nil {
+		cancel()
+		log.Fatal(err.Error())
+	}
+	proto.RegisterShortenerServer(grpcServer, grpcserv.New(storage, conf))
+	log.Println("gRPC server start at:", listen.Addr().String())
+	if err = grpcServer.Serve(listen); err != nil {
+		cancel()
+		log.Fatal(err.Error())
 	}
 }

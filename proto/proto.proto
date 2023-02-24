@@ -1,0 +1,65 @@
+syntax="proto3";
+
+package shortener;
+
+option go_package = "./proto";
+
+message StringForm{
+  string link = 1;
+}
+
+message CommonResponse{
+  string link = 1;
+}
+
+message NoParam{}
+
+message IntForm{
+  int32 value = 1;
+}
+
+message StatsResponse{
+  int32 urls = 1;
+  int32 users = 2;
+}
+
+message DeleteRequest{
+  repeated string id = 1;
+}
+
+message Links{
+  string full = 1;
+  string short = 2;
+}
+
+message GetUserURLsResponse{
+  repeated Links links = 1;
+}
+
+message ButchLinks{
+  string link = 1;
+  string id = 2;
+}
+
+message PostBatchRequest{
+  repeated ButchLinks links = 1;
+}
+
+message PostBatchResponse{
+  repeated ButchLinks links = 1;
+}
+
+message PostJSONRespReq{
+  bytes json = 1;
+}
+
+service Shortener{
+  rpc AddByText(StringForm) returns (CommonResponse);
+  rpc GetByHashURL(StringForm) returns (CommonResponse);
+  rpc Ping(NoParam) returns (IntForm);
+  rpc Stats(NoParam) returns (StatsResponse);
+  rpc Delete(DeleteRequest) returns (IntForm);
+  rpc GetUserURLs(NoParam) returns (GetUserURLsResponse);
+  rpc PostJSON(PostJSONRespReq) returns (PostJSONRespReq);
+  rpc PostBatch(PostBatchRequest) returns (PostBatchResponse);
+}

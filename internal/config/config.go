@@ -25,6 +25,7 @@ type Config struct {
 	EnableHTTPS   bool   `json:"enable_https" env:"ENABLE_HTTPS"`
 	Config        string `env:"CONFIG"`
 	TrustedSubnet string `json:"trusted_subnet" env:"TRUSTED_SUBNET"`
+	EnableGRPC    bool   `json:"enable_grpc" env:"ENABLE_GRPC"`
 }
 
 // NewConfig - конструктор конфигурационного файла.
@@ -36,6 +37,7 @@ func NewConfig(options ...Option) *Config {
 		DatabaseDSN:   "",
 		Config:        "",
 		TrustedSubnet: "",
+		EnableGRPC:    false,
 	}
 
 	// если в аргументах получили Options, то применяем их к Config.
@@ -65,6 +67,9 @@ func NewConfig(options ...Option) *Config {
 	if conf.TrustedSubnet == "" {
 		conf.TrustedSubnet = configJSON.TrustedSubnet
 	}
+	if !conf.EnableGRPC {
+		conf.EnableGRPC = configJSON.EnableGRPC
+	}
 	if !conf.EnableHTTPS {
 		conf.EnableHTTPS = configJSON.EnableHTTPS
 	}
@@ -91,6 +96,7 @@ func (c *Config) ParseFlags() {
 	flag.BoolVar(&c.EnableHTTPS, "s", c.EnableHTTPS, "ENABLE_HTTPS")
 	flag.StringVar(&c.Config, "c", c.Config, "config JSON file")
 	flag.StringVar(&c.TrustedSubnet, "t", c.TrustedSubnet, "TRUSTED_SUBNET")
+	flag.BoolVar(&c.EnableGRPC, "g", c.EnableGRPC, "ENABLE_GRPC")
 	flag.Parse()
 }
 
