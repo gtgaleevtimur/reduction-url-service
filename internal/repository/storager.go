@@ -14,6 +14,8 @@ type Storager interface {
 	GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error)
 	Delete(ctx context.Context, hashes []string, userID string) error
 	Ping(ctx context.Context) error
+	GetCountURL(ctx context.Context) (int, error)
+	GetCountUsers(ctx context.Context) (int, error)
 }
 
 // NodeURL - сущность сокращенного URL, использующаяся в логике резервного хранилища.
@@ -57,6 +59,12 @@ type FullBatch struct {
 type ShortBatch struct {
 	CorID string `json:"correlation_id"`
 	Short string `json:"short_url"`
+}
+
+// StatStruct - сущность статистики сокращенных URL и количества пользователей.
+type StatStruct struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
 }
 
 // ErrConflictInsert - ошибка, показывающая, что сохраняемый URL уже есть в базе данных.
