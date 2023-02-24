@@ -78,3 +78,6 @@ var ErrDeletedURL error = errors.New("URL is delete")
 
 // ErrFileStoragePathNil - ошибка, показывающая, что путь записи резервного хранилища не задан.
 var ErrFileStoragePathNil error = errors.New("err FILE_STORAGE_PATH is nil ")
+
+// ErrCIDRContain - сообщает что IP пользователя не заслуживает доверия.
+var ErrCIDRContain error = errors.New("real ip not contains")
