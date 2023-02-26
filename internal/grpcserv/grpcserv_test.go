@@ -6,6 +6,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"net"
+	"net/http"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/gtgaleevtimur/reduction-url-service/internal/config"
 	"github.com/gtgaleevtimur/reduction-url-service/internal/repository"
 	"github.com/gtgaleevtimur/reduction-url-service/proto"
@@ -14,12 +21,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
-	"math/rand"
-	"net"
-	"net/http"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestNew(t *testing.T) {
