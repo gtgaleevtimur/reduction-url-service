@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// getIP - возвращает IP пользователя.
-func getIP(r *http.Request) (net.IP, error) {
+// GetIP - возвращает IP пользователя.
+func GetIP(r *http.Request) (net.IP, error) {
 	// получаем значения удаленного адреса пользователя из запроса
 	remoteAddr := r.RemoteAddr
 	ip, _, err := net.SplitHostPort(remoteAddr)

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -395,4 +397,57 @@ func BenchmarkServerHandler_GetAllUserURLs(b *testing.B) {
 		b.StopTimer()
 		res.Body.Close()
 	}
+}
+
+func TestServerHandler_GetStats(t *testing.T) {
+	t.Run("Positive stats", func(t *testing.T) {
+		cnf := config.NewConfig()
+		controller := repository.NewStorage(cnf)
+		r := NewRouter(controller, cnf)
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+		req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/internal/stats", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.NotNil(t, body)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		temp := &repository.StatStruct{
+			Users: 0,
+			Urls:  0,
+		}
+		data, err := json.Marshal(temp)
+		require.NoError(t, err)
+		assert.Equal(t, body, data)
+	})
+	t.Run("Negative via status forbidden", func(t *testing.T) {
+		cnf := config.NewConfig()
+		cnf.TrustedSubnet = "true"
+		controller := repository.NewStorage(cnf)
+		r := NewRouter(controller, cnf)
+		ts := httptest.NewServer(r)
+		defer ts.Close()
+		req, err := http.NewRequest(http.MethodGet, ts.URL+"/api/internal/stats", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+}
+
+func TestGetIP(t *testing.T) {
+	t.Run("Negative", func(t *testing.T) {
+		request := &http.Request{RemoteAddr: "192.0.0.2:80",
+			Header: map[string][]string{
+				"X-Real-IP": {"192.0.0.2"},
+			}}
+		netIP, err := GetIP(request)
+		fmt.Println(netIP)
+		require.Equal(t, net.IP(nil), netIP)
+		assert.Equal(t, "ip is not real", err.Error())
+	})
 }

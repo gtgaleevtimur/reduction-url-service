@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -53,7 +54,7 @@ func (s *Shortener) AddByText(ctx context.Context, r *proto.StringForm) (*proto.
 			return nil, status.Error(codes.Unauthenticated, "missing token")
 		}
 		res, err := s.repository.InsertURL(ctx, url, token)
-		if err != nil {
+		if err != nil && err != repository.ErrConflictInsert {
 			return &response, status.Error(codes.Internal, "method AddByText not realise")
 		}
 		exShortURL := s.conf.ExpShortURL(res)
@@ -133,6 +134,7 @@ func (s *Shortener) GetUserURLs(ctx context.Context, r *proto.NoParam) (*proto.G
 		if len(values) > 0 {
 			token = values[0]
 		}
+		fmt.Println(token)
 		if len(token) == 0 {
 			return nil, status.Error(codes.Unauthenticated, "missing token")
 		}
@@ -183,7 +185,7 @@ func (s *Shortener) PostJSON(ctx context.Context, r *proto.PostJSONRespReq) (*pr
 		response.Json = respBody
 	}
 
-	return &response, status.Errorf(codes.Unimplemented, "method PostJSON not implemented")
+	return &response, nil
 }
 
 // PostBatch - метод реализующий загрузку массива с url.
@@ -219,7 +221,8 @@ func (s *Shortener) PostBatch(ctx context.Context, r *proto.PostBatchRequest) (*
 // если он пуст или проверка токен не удалась, то он выдает новый userid.
 func MyUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	var token string
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
 		values := md.Get("token")
 		if len(values) > 0 {
 			token = values[0]
@@ -249,9 +252,9 @@ func MyUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 		log.Printf("UserID generate: %v\n", err)
 	}
 	aesBlock.Encrypt(tokenBuf, append(userID, nonce...))
-	md := metadata.New(map[string]string{"token": hex.EncodeToString(tokenBuf)})
-	ctx = metadata.NewOutgoingContext(context.Background(), md)
-	return handler(ctx, req)
+	mdNew := metadata.New(map[string]string{"token": hex.EncodeToString(tokenBuf)})
+	newCtx := metadata.NewIncomingContext(context.Background(), mdNew)
+	return handler(newCtx, req)
 }
 
 // generateRandom - генератор случайных байт длинной size.

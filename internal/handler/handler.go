@@ -73,7 +73,7 @@ func (h ServerHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
-		ip, err := getIP(r)
+		ip, err := GetIP(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
