@@ -33,6 +33,7 @@ func TestNew(t *testing.T) {
 
 func TestShortener_AddByText(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
@@ -72,6 +73,7 @@ func TestShortener_AddByText(t *testing.T) {
 
 func TestShortener_GetByHashURL(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
@@ -104,6 +106,7 @@ func TestShortener_GetByHashURL(t *testing.T) {
 
 func TestShortener_Ping(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
@@ -123,6 +126,7 @@ func TestShortener_Ping(t *testing.T) {
 
 func TestShortener_Stats(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
@@ -143,6 +147,7 @@ func TestShortener_Stats(t *testing.T) {
 
 func TestShortener_Delete(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
@@ -189,6 +194,7 @@ func TestShortener_Delete(t *testing.T) {
 
 func TestShortener_GetUserURLs(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
@@ -235,6 +241,7 @@ func TestShortener_GetUserURLs(t *testing.T) {
 
 func TestShortener_PostJSON(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
@@ -261,6 +268,7 @@ func TestShortener_PostJSON(t *testing.T) {
 
 func TestShortener_PostBatch(t *testing.T) {
 	l, err := net.Listen("tcp", ":0")
+	require.NoError(t, err)
 	conf := config.NewConfig()
 	storage, err := repository.NewDataSource(conf)
 	require.NoError(t, err)
