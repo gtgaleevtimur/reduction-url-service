@@ -259,10 +259,11 @@ func TestShortener_PostJSON(t *testing.T) {
 	}
 	body, err := json.Marshal(full)
 	require.NoError(t, err)
-	_, err = client.PostJSON(context.Background(), &proto.PostJSONRespReq{
+	connJSON, err := client.PostJSON(context.Background(), &proto.PostJSONRespReq{
 		Json: body,
 	})
 	require.NoError(t, err)
+	require.IsType(t, &proto.PostJSONRespReq{}, connJSON)
 
 }
 
