@@ -23,9 +23,9 @@ import (
 
 func TestNewRouter(t *testing.T) {
 	t.Run("NewRouter", func(t *testing.T) {
-		conf := config.NewConfig(config.WithParseEnv())
-		storage, err := repository.NewDataSource(conf)
+		storage, err := repository.NewDataSource()
 		assert.NoError(t, err)
+		conf := config.NewConfig()
 		got := NewRouter(storage, conf)
 		require.NotNil(t, got)
 	})
