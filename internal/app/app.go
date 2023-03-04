@@ -21,19 +21,19 @@ import (
 
 // Run - функция собирающая все компоненты сервиса воедино.
 func Run() {
-	// Конфигурация приложения через считывание флагов и переменных окружения.
-	conf := config.NewConfig(config.WithParseEnv())
 	// Инициализация хранилища приложения.
-	storage, err := repository.NewDataSource(conf)
+	storage, err := repository.NewDataSource()
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Инициализация и запуск сервера.
-	startServer(conf, storage)
+	startServer(storage)
 }
 
 // startServer - запускает сервер с настройками из конфигурационного файла.
-func startServer(conf *config.Config, storage repository.Storager) {
+func startServer(storage repository.Storager) {
+	// Конфигурационный файл-одиночка.
+	conf := config.NewConfig()
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 
