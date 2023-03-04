@@ -39,10 +39,11 @@ func startServer(conf *config.Config, storage repository.Storager) {
 
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(grpcserv.MyUnaryInterceptor))
 
+	if conf.EnableGRPC {
+		go startGRPC(storage, conf, grpcServer, cancel)
+	}
+
 	if !conf.EnableHTTPS {
-		if conf.EnableGRPC {
-			go startGRPC(storage, conf, grpcServer, cancel)
-		}
 		server := &http.Server{
 			Addr:    conf.ServerAddress,
 			Handler: handler.NewRouter(storage, conf),
@@ -57,9 +58,6 @@ func startServer(conf *config.Config, storage repository.Storager) {
 		}
 	}
 	if conf.EnableHTTPS {
-		if conf.EnableGRPC {
-			go startGRPC(storage, conf, grpcServer, cancel)
-		}
 		manager := &autocert.Manager{
 			Cache:      autocert.DirCache("cache"),
 			Prompt:     autocert.AcceptTOS,
