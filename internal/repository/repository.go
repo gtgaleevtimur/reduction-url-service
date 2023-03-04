@@ -56,6 +56,24 @@ func (s *Storage) InsertURL(ctx context.Context, fullURL string, userID string) 
 	return okHash, ErrConflictInsert
 }
 
+// GetCountUsers - возвращает количество пользователей в БД.
+func (s *Storage) GetCountUsers(_ context.Context) (int, error) {
+	s.RLock()
+	defer s.RUnlock()
+	temp := make(map[string]bool)
+	for _, v := range s.Data {
+		temp[v.UserID] = true
+	}
+	return len(temp), nil
+}
+
+// GetCountURL - возвращает количество URL в БД.
+func (s *Storage) GetCountURL(_ context.Context) (int, error) {
+	s.RLock()
+	defer s.RUnlock()
+	return len(s.Data), nil
+}
+
 // GetShortURL - метод, возвращающий hash сокращенного url.
 func (s *Storage) GetShortURL(_ context.Context, fullURL string) (string, error) {
 	s.RLock()

@@ -14,6 +14,8 @@ type Storager interface {
 	GetAllUserURLs(ctx context.Context, userid string) ([]SlicedURL, error)
 	Delete(ctx context.Context, hashes []string, userID string) error
 	Ping(ctx context.Context) error
+	GetCountURL(ctx context.Context) (int, error)
+	GetCountUsers(ctx context.Context) (int, error)
 }
 
 // NodeURL - сущность сокращенного URL, использующаяся в логике резервного хранилища.
@@ -59,6 +61,12 @@ type ShortBatch struct {
 	Short string `json:"short_url"`
 }
 
+// StatStruct - сущность статистики сокращенных URL и количества пользователей.
+type StatStruct struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
+}
+
 // ErrConflictInsert - ошибка, показывающая, что сохраняемый URL уже есть в базе данных.
 var ErrConflictInsert error = errors.New("URL is exist")
 
@@ -70,3 +78,6 @@ var ErrDeletedURL error = errors.New("URL is delete")
 
 // ErrFileStoragePathNil - ошибка, показывающая, что путь записи резервного хранилища не задан.
 var ErrFileStoragePathNil error = errors.New("err FILE_STORAGE_PATH is nil ")
+
+// ErrCIDRContain - сообщает что IP пользователя не заслуживает доверия.
+var ErrCIDRContain error = errors.New("real ip not contains")

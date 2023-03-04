@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/caarlos0/env"
 )
@@ -16,6 +17,11 @@ const (
 	HTTP     string = "http://"   // префикс адреса по дефолту.
 )
 
+var (
+	config *Config
+	once   sync.Once
+)
+
 // Config - структура конфигурационного файла приложения.
 type Config struct {
 	ServerAddress string `json:"server_address" env:"SERVER_ADDRESS"`
@@ -24,46 +30,60 @@ type Config struct {
 	DatabaseDSN   string `json:"database_dsn" env:"DATABASE_DSN"`
 	EnableHTTPS   bool   `json:"enable_https" env:"ENABLE_HTTPS"`
 	Config        string `env:"CONFIG"`
+	TrustedSubnet string `json:"trusted_subnet" env:"TRUSTED_SUBNET"`
+	EnableGRPC    bool   `json:"enable_grpc" env:"ENABLE_GRPC"`
 }
 
 // NewConfig - конструктор конфигурационного файла.
 func NewConfig(options ...Option) *Config {
-	conf := Config{
-		ServerAddress: HostAddr + ":" + HostPort,
-		BaseURL:       HostAddr + ":" + HostPort,
-		StoragePath:   "",
-		DatabaseDSN:   "",
-		Config:        "",
-	}
+	once.Do(
+		func() {
+			config = &Config{
+				ServerAddress: HostAddr + ":" + HostPort,
+				BaseURL:       HostAddr + ":" + HostPort,
+				StoragePath:   "",
+				DatabaseDSN:   "",
+				Config:        "",
+				TrustedSubnet: "",
+				EnableGRPC:    false,
+			}
 
-	// если в аргументах получили Options, то применяем их к Config.
-	for _, opt := range options {
-		opt(&conf)
-	}
-	configDataJSON, err := os.ReadFile(conf.Config)
-	if err != nil {
-		return &conf
-	}
-	var configJSON Config
-	if err = json.Unmarshal(configDataJSON, &configJSON); err != nil {
-		return &conf
-	}
-	if conf.ServerAddress == "" {
-		conf.ServerAddress = configJSON.ServerAddress
-	}
-	if conf.BaseURL == "" {
-		conf.BaseURL = configJSON.ServerAddress
-	}
-	if conf.StoragePath == "" {
-		conf.StoragePath = configJSON.StoragePath
-	}
-	if conf.DatabaseDSN == "" {
-		conf.DatabaseDSN = configJSON.StoragePath
-	}
-	if !conf.EnableHTTPS {
-		conf.EnableHTTPS = configJSON.EnableHTTPS
-	}
-	return &conf
+			// если в аргументах получили Options, то применяем их к Config.
+			for _, opt := range options {
+				opt(config)
+			}
+			configDataJSON, err := os.ReadFile(config.Config)
+			if err != nil {
+				return
+			}
+			var configJSON Config
+			if err = json.Unmarshal(configDataJSON, &configJSON); err != nil {
+				return
+			}
+			if config.ServerAddress == "" {
+				config.ServerAddress = configJSON.ServerAddress
+			}
+			if config.BaseURL == "" {
+				config.BaseURL = configJSON.ServerAddress
+			}
+			if config.StoragePath == "" {
+				config.StoragePath = configJSON.StoragePath
+			}
+			if config.DatabaseDSN == "" {
+				config.DatabaseDSN = configJSON.StoragePath
+			}
+			if config.TrustedSubnet == "" {
+				config.TrustedSubnet = configJSON.TrustedSubnet
+			}
+			if !config.EnableGRPC {
+				config.EnableGRPC = configJSON.EnableGRPC
+			}
+			if !config.EnableHTTPS {
+				config.EnableHTTPS = configJSON.EnableHTTPS
+			}
+		})
+
+	return config
 }
 
 // Option - функция применяемая к Config для его заполнения.
@@ -85,6 +105,8 @@ func (c *Config) ParseFlags() {
 	flag.StringVar(&c.DatabaseDSN, "d", c.DatabaseDSN, "DATABASE_DSN")
 	flag.BoolVar(&c.EnableHTTPS, "s", c.EnableHTTPS, "ENABLE_HTTPS")
 	flag.StringVar(&c.Config, "c", c.Config, "config JSON file")
+	flag.StringVar(&c.TrustedSubnet, "t", c.TrustedSubnet, "TRUSTED_SUBNET")
+	flag.BoolVar(&c.EnableGRPC, "g", c.EnableGRPC, "ENABLE_GRPC")
 	flag.Parse()
 }
 

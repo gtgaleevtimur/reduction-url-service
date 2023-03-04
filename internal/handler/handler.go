@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -38,6 +39,7 @@ func NewRouter(s repository.Storager, c *config.Config) chi.Router {
 		router.Get("/ping", controller.Ping)
 
 		router.Route("/api", func(router chi.Router) {
+			router.Get("/internal/stats", controller.GetStats)
 			router.Delete("/user/urls", controller.DeleteBatch)
 			router.Get("/user/urls", controller.GetAllUserURLs)
 			router.Post("/shorten", controller.ShortURLJSONBy)
@@ -60,6 +62,52 @@ type ServerHandler struct {
 // newServerHandler - конструктор контроллера.
 func newServerHandler(s repository.Storager, c *config.Config) *ServerHandler {
 	return &ServerHandler{Storage: s, Conf: c}
+}
+
+// GetStats - обработчик эндпоинта GET /api/internal/stats , проверяет реальный IP возвращает статистику по сокращенным
+// URL и пользователям в системе.
+func (h ServerHandler) GetStats(w http.ResponseWriter, r *http.Request) {
+	if h.Conf.TrustedSubnet != "" {
+		_, ipNet, err := net.ParseCIDR(h.Conf.TrustedSubnet)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		ip, err := GetIP(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		if !ipNet.Contains(ip) {
+			http.Error(w, repository.ErrCIDRContain.Error(), http.StatusForbidden)
+			return
+		}
+	}
+	// Инициализируем контекст
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+	urls, err := h.Storage.GetCountURL(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	users, err := h.Storage.GetCountUsers(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	temp := &repository.StatStruct{
+		Users: users,
+		Urls:  urls,
+	}
+	response, err := json.Marshal(temp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
 
 // ShortURLTextBy - обработчик эндпоинта POST /, принимает в теле запроса текстовую строку URL для сокращения.

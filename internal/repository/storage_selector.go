@@ -5,7 +5,9 @@ import (
 )
 
 // NewDataSource - функция-хэлпер, выбирающая вид хранилища для текущей конфигурации.
-func NewDataSource(conf *config.Config) (result Storager, err error) {
+func NewDataSource() (result Storager, err error) {
+	// Конфигурация приложения через считывание флагов и переменных окружения.
+	conf := config.NewConfig(config.WithParseEnv())
 	if conf.DatabaseDSN != "" {
 		return NewDatabaseDSN(conf)
 	} else {

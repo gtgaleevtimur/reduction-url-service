@@ -62,6 +62,26 @@ func (d *Database) Connect(conf *config.Config) (err error) {
 	return nil
 }
 
+// GetCountUsers - возвращает количество пользователей в БД.
+func (d *Database) GetCountUsers(ctx context.Context) (int, error) {
+	var count int
+	err := d.DB.QueryRowContext(ctx, `SELECT count(DISTINCT userid) FROM shortener`).Scan(&count)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
+}
+
+// GetCountURL - возвращает количество URL в БД.
+func (d *Database) GetCountURL(ctx context.Context) (int, error) {
+	var count int
+	err := d.DB.QueryRowContext(ctx, `SELECT count(*) FROM shortener`).Scan(&count)
+	if err != nil {
+		return count, err
+	}
+	return count, nil
+}
+
 // GetShortURL - метод, возвращающий hash сокращенного url.
 func (d *Database) GetShortURL(ctx context.Context, fullURL string) (string, error) {
 	var hash string
