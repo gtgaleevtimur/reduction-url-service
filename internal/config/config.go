@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/caarlos0/env"
 )
@@ -14,6 +15,11 @@ const (
 	HostPort string = "8080"      // порт хоста по дефолту.
 	HostAddr string = "localhost" // адрес хоста по дефолту.
 	HTTP     string = "http://"   // префикс адреса по дефолту.
+)
+
+var (
+	config *Config
+	once   sync.Once
 )
 
 // Config - структура конфигурационного файла приложения.
@@ -30,50 +36,54 @@ type Config struct {
 
 // NewConfig - конструктор конфигурационного файла.
 func NewConfig(options ...Option) *Config {
-	conf := Config{
-		ServerAddress: HostAddr + ":" + HostPort,
-		BaseURL:       HostAddr + ":" + HostPort,
-		StoragePath:   "",
-		DatabaseDSN:   "",
-		Config:        "",
-		TrustedSubnet: "",
-		EnableGRPC:    false,
-	}
+	once.Do(
+		func() {
+			config = &Config{
+				ServerAddress: HostAddr + ":" + HostPort,
+				BaseURL:       HostAddr + ":" + HostPort,
+				StoragePath:   "",
+				DatabaseDSN:   "",
+				Config:        "",
+				TrustedSubnet: "",
+				EnableGRPC:    false,
+			}
 
-	// если в аргументах получили Options, то применяем их к Config.
-	for _, opt := range options {
-		opt(&conf)
-	}
-	configDataJSON, err := os.ReadFile(conf.Config)
-	if err != nil {
-		return &conf
-	}
-	var configJSON Config
-	if err = json.Unmarshal(configDataJSON, &configJSON); err != nil {
-		return &conf
-	}
-	if conf.ServerAddress == "" {
-		conf.ServerAddress = configJSON.ServerAddress
-	}
-	if conf.BaseURL == "" {
-		conf.BaseURL = configJSON.ServerAddress
-	}
-	if conf.StoragePath == "" {
-		conf.StoragePath = configJSON.StoragePath
-	}
-	if conf.DatabaseDSN == "" {
-		conf.DatabaseDSN = configJSON.StoragePath
-	}
-	if conf.TrustedSubnet == "" {
-		conf.TrustedSubnet = configJSON.TrustedSubnet
-	}
-	if !conf.EnableGRPC {
-		conf.EnableGRPC = configJSON.EnableGRPC
-	}
-	if !conf.EnableHTTPS {
-		conf.EnableHTTPS = configJSON.EnableHTTPS
-	}
-	return &conf
+			// если в аргументах получили Options, то применяем их к Config.
+			for _, opt := range options {
+				opt(config)
+			}
+			configDataJSON, err := os.ReadFile(config.Config)
+			if err != nil {
+				return
+			}
+			var configJSON Config
+			if err = json.Unmarshal(configDataJSON, &configJSON); err != nil {
+				return
+			}
+			if config.ServerAddress == "" {
+				config.ServerAddress = configJSON.ServerAddress
+			}
+			if config.BaseURL == "" {
+				config.BaseURL = configJSON.ServerAddress
+			}
+			if config.StoragePath == "" {
+				config.StoragePath = configJSON.StoragePath
+			}
+			if config.DatabaseDSN == "" {
+				config.DatabaseDSN = configJSON.StoragePath
+			}
+			if config.TrustedSubnet == "" {
+				config.TrustedSubnet = configJSON.TrustedSubnet
+			}
+			if !config.EnableGRPC {
+				config.EnableGRPC = configJSON.EnableGRPC
+			}
+			if !config.EnableHTTPS {
+				config.EnableHTTPS = configJSON.EnableHTTPS
+			}
+		})
+
+	return config
 }
 
 // Option - функция применяемая к Config для его заполнения.
