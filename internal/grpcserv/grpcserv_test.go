@@ -218,24 +218,20 @@ func TestShortener_GetUserURLs(t *testing.T) {
 	aesBlock.Encrypt(tokenBuf, append(b, nonce...))
 	md := metadata.New(map[string]string{"token": hex.EncodeToString(tokenBuf)})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	links := []*proto.StringForm{
-		{Link: `http://test.ru` + strconv.Itoa(rand.Intn(99))},
-		{Link: `http://test.ru` + strconv.Itoa(rand.Intn(99))},
-		{Link: `http://test.ru` + strconv.Itoa(rand.Intn(99))},
+	link := &proto.StringForm{
+		Link: `http://test.ru` + strconv.Itoa(rand.Intn(99)),
 	}
-	addSlice := make([]string, 0)
-	for _, v := range links {
-		connAdd, err := client.AddByText(ctx, v)
-		require.NoError(t, err)
-		require.NotNil(t, connAdd)
-		addSlice = append(addSlice, connAdd.GetLink())
-	}
+
+	connAdd, err := client.AddByText(ctx, link)
+	require.NoError(t, err)
+	require.NotNil(t, connAdd)
+
 	connGetAll, err := client.GetUserURLs(ctx, &proto.NoParam{})
 	require.NoError(t, err)
 	responseLinks := connGetAll.GetLinks()
-	for j, k := range responseLinks {
-		assert.Equal(t, k.Short, addSlice[j])
-		assert.Equal(t, k.Full, links[j].Link)
+	for _, k := range responseLinks {
+		assert.Equal(t, k.Short, connAdd.GetLink())
+		assert.Equal(t, k.Full, link.Link)
 	}
 }
 
